@@ -1,66 +1,117 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router";
+
 import SignIn from "./pages/AuthPages/SignIn";
 import SignUp from "./pages/AuthPages/SignUp";
 import NotFound from "./pages/OtherPage/NotFound";
-import UserProfiles from "./pages/UserProfiles";
-import Videos from "./pages/UiElements/Videos";
-import Images from "./pages/UiElements/Images";
-import Alerts from "./pages/UiElements/Alerts";
-import Badges from "./pages/UiElements/Badges";
-import Avatars from "./pages/UiElements/Avatars";
-import Buttons from "./pages/UiElements/Buttons";
-import LineChart from "./pages/Charts/LineChart";
-import BarChart from "./pages/Charts/BarChart";
-import Calendar from "./pages/Calendar";
-import BasicTables from "./pages/Tables/BasicTables";
-import FormElements from "./pages/Forms/FormElements";
-import Blank from "./pages/Blank";
+
 import AppLayout from "./layout/AppLayout";
 import { ScrollToTop } from "./components/common/ScrollToTop";
+
+/* =========================
+   ADMINISTRADOR
+========================= */
+
 import Home from "./pages/Dashboard/Home";
+import GestionEmpresarial from "./pages/Administrador/GestionEmpresarial";
+import KPI from "./pages/Administrador/KPI";
+import Capacitacion from "./pages/Administrador/Capacitacion";
+import Reporte from "./pages/Administrador/Resporte";
+import Usuarios from "./pages/Administrador/Usuarios";
+
+/* =========================
+   EMPLEADO
+========================= */
+
+import AppLayoutEmpleado from "./layout/AppLayoutEmpleado";
+
+import EmpleadoHome from "./pages/Empleado/EmpleadoHome";
+import EmpleadoPerfil from "./pages/Empleado/EmpleadoPerfil";
+import EmpleadoCapacitaciones from "./pages/Empleado/EmpleadoCapacitaciones";
+import EmpleadoHistorial from "./pages/Empleado/EmpleadoHistorial";
+import EmpleadoDesempeno from "./pages/Empleado/EmpleadoDesempeno";
+import EmpleadoObjetivos from "./pages/Empleado/EmpleadoObjetivos";
+import EmpleadoReportes from "./pages/Empleado/EmpleadoReportes";
+import EmpleadoConstancias from "./pages/Empleado/EmpleadoConstancias";
 
 export default function App() {
   return (
-    <>
-      <Router>
-        <ScrollToTop />
-        <Routes>
-          {/* Dashboard Layout */}
-          <Route element={<AppLayout />}>
-            <Route index path="/" element={<Home />} />
+    <Router>
+      <ScrollToTop />
 
-            {/* Others Page */}
-            <Route path="/profile" element={<UserProfiles />} />
-            <Route path="/calendar" element={<Calendar />} />
-            <Route path="/blank" element={<Blank />} />
+      <Routes>
 
-            {/* Forms */}
-            <Route path="/form-elements" element={<FormElements />} />
+        {/* =========================================
+            ADMINISTRADOR
+        ========================================= */}
+        <Route element={<AppLayout />}>
 
-            {/* Tables */}
-            <Route path="/basic-tables" element={<BasicTables />} />
+          <Route index path="/" element={<Home />} />
+          <Route
+            path="/gestion_empresarial"
+            element={<GestionEmpresarial />}
+          />
+          <Route path="/kpi" element={<KPI />} />
+          <Route
+            path="/capacitacion"
+            element={<Capacitacion />}
+          />
+          <Route path="/reporte" element={<Reporte />} />
+          <Route path="/usuarios" element={<Usuarios />} />
+        </Route>
 
-            {/* Ui Elements */}
-            <Route path="/alerts" element={<Alerts />} />
-            <Route path="/avatars" element={<Avatars />} />
-            <Route path="/badge" element={<Badges />} />
-            <Route path="/buttons" element={<Buttons />} />
-            <Route path="/images" element={<Images />} />
-            <Route path="/videos" element={<Videos />} />
+        {/* =========================================
+            EMPLEADO
+        ========================================= */}
 
-            {/* Charts */}
-            <Route path="/line-chart" element={<LineChart />} />
-            <Route path="/bar-chart" element={<BarChart />} />
-          </Route>
+        <Route element={<AppLayoutEmpleado />}>
+          <Route
+            path="/empleado"
+            element={<EmpleadoHome />}
+          />
+          <Route
+            path="/empleado/perfil"
+            element={<EmpleadoPerfil />}
+          />
+          <Route
+            path="/empleado/capacitaciones"
+            element={<EmpleadoCapacitaciones />}
+          />
+          <Route
+            path="/empleado/capacitaciones/historial"
+            element={<EmpleadoHistorial />}
+          />
+          <Route
+            path="/empleado/desempeno"
+            element={<EmpleadoDesempeno />}
+          />
+          <Route
+            path="/empleado/objetivos"
+            element={<EmpleadoObjetivos />}
+          />
+          <Route
+            path="/empleado/reportes"
+            element={<EmpleadoReportes />}
+          />
+          <Route
+            path="/empleado/constancias"
+            element={<EmpleadoConstancias />}
+          />
+        </Route>
 
-          {/* Auth Layout */}
-          <Route path="/signin" element={<SignIn />} />
-          <Route path="/signup" element={<SignUp />} />
+        {/* =========================================
+            AUTH
+        ========================================= */}
 
-          {/* Fallback Route */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </Router>
-    </>
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+
+        {/* =========================================
+            NOT FOUND
+        ========================================= */}
+
+        <Route path="*" element={<NotFound />} />
+
+      </Routes>
+    </Router>
   );
 }

@@ -1,12 +1,28 @@
 export default function GridShape() {
   return (
-    <>
-      <div className="absolute right-0 top-0 -z-1 w-full max-w-[250px] xl:max-w-[450px]">
-        <img src="/images/shape/grid-01.svg" alt="grid" />
-      </div>
-      <div className="absolute bottom-0 left-0 -z-1 w-full max-w-[250px] rotate-180 xl:max-w-[450px]">
-        <img src="/images/shape/grid-01.svg" alt="grid" />
-      </div>
-    </>
+    <div className="absolute inset-0 -z-10 overflow-hidden">
+      
+      {/* Imagen */}
+      <img
+        src="/images/logo/auth-logo.jpg"
+        alt="Background"
+        className="
+          h-full
+          w-full
+          object-cover
+          opacity-30
+          dark:opacity-20
+          scale-105
+        "
+      />
+
+      {/* Overlay más oscuro pero suave */}
+      <div
+        className="
+          absolute inset-0
+          bg-[#1b140f]/55
+        "
+      />
+    </div>
   );
 }

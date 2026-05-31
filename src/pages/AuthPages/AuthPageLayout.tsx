@@ -9,29 +9,57 @@ export default function AuthLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative p-6 bg-white z-1 dark:bg-gray-900 sm:p-0">
-      <div className="relative flex flex-col justify-center w-full h-screen lg:flex-row dark:bg-gray-900 sm:p-0">
-        {children}
-        <div className="items-center hidden w-full h-full lg:w-1/2 bg-brand-950 dark:bg-white/5 lg:grid">
-          <div className="relative flex items-center justify-center z-1">
-            {/* <!-- ===== Common Grid Shape Start ===== --> */}
-            <GridShape />
-            <div className="flex flex-col items-center max-w-xs">
-              <Link to="/" className="block mb-4">
+    <div className="relative z-1 bg-[#ede7df] dark:bg-[#111111] p-6 sm:p-0">
+      <div className="relative flex h-screen w-full flex-col justify-center lg:flex-row">
+
+        {/* FORMULARIO */}
+        <div className="flex w-full items-center justify-center bg-[#ede7df] dark:bg-[#111111] lg:w-1/2">
+          {children}
+        </div>
+
+        {/* PANEL DERECHO */}
+        <div className="relative hidden h-full w-full overflow-hidden lg:grid lg:w-1/2">
+          
+          {/* FONDO */}
+          <GridShape />
+
+          {/* CONTENIDO */}
+          <div className="relative z-20 flex items-center justify-center">
+            <div className="flex max-w-sm flex-col items-center px-10">
+
+              {/* LOGO */}
+              <Link to="/" className="mb-8 block">
                 <img
-                  width={231}
+                  width={220}
                   height={48}
                   src="/images/logo/auth-logo.svg"
                   alt="Logo"
+                  className="opacity-95"
                 />
               </Link>
-              <p className="text-center text-gray-400 dark:text-white/60">
-                Free and Open-Source Tailwind CSS Admin Dashboard Template
+
+              {/* TITULO */}
+              <h1 className="mb-4 text-center text-4xl font-bold text-[#f2dfc2]">
+                El Ceibo
+              </h1>
+
+              {/* TEXTO */}
+              <p className="text-center leading-7 text-[#cbb08b]">
+                Sistema de gestión estratégica empresarial
               </p>
+
+              {/* DECORACION */}
+              <div className="mt-10 flex gap-3">
+                <div className="h-2 w-2 rounded-full bg-[#c89b63]" />
+                <div className="h-2 w-2 rounded-full bg-[#8b6b45]" />
+                <div className="h-2 w-2 rounded-full bg-[#f7e7ce]" />
+              </div>
             </div>
           </div>
         </div>
-        <div className="fixed z-50 hidden bottom-6 right-6 sm:block">
+
+        {/* BOTON DARK/LIGHT */}
+        <div className="fixed bottom-6 right-6 z-50 hidden sm:block">
           <ThemeTogglerTwo />
         </div>
       </div>
