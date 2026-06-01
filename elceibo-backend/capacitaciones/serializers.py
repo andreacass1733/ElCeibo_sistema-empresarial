@@ -25,3 +25,24 @@ class CapacitacionSerializer(serializers.ModelSerializer):
             'fecha_inicio', 'fecha_fin', 'instructor',
             'costo', 'empleados'
         ]
+
+
+from .models import Capacitacion, EmpleadoCapacitacion, Empleado, Objetivo, Alerta, Metrica
+
+
+class ObjetivoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Objetivo
+        fields = '__all__'
+
+
+class AlertaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Alerta
+        fields = '__all__'
+
+
+class MetricaSerializer(serializers.ModelSerializer):
+    class Meta:
+        model  = Metrica
+        fields = '__all__'

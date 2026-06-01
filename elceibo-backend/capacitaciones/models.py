@@ -48,3 +48,50 @@ class EmpleadoCapacitacion(models.Model):
 
     class Meta:
         db_table = 'Empleado_Capacitacion'
+
+
+class Objetivo(models.Model):
+    ESTADOS = [
+        ('COMPLETADO',  'Completado'),
+        ('EN_PROGRESO', 'En progreso'),
+        ('PENDIENTE',   'Pendiente'),
+        ('EN_RIESGO',   'En riesgo'),
+    ]
+    id_objetivo  = models.AutoField(primary_key=True)
+    titulo       = models.CharField(max_length=200)
+    descripcion  = models.TextField(null=True, blank=True)
+    area         = models.CharField(max_length=50, null=True)
+    estado       = models.CharField(max_length=20, choices=ESTADOS, default='PENDIENTE')
+    progreso     = models.IntegerField(default=0)
+    responsable  = models.CharField(max_length=100, null=True)
+    fecha_limite = models.DateField(null=True)
+
+    class Meta:
+        db_table = 'Objetivo'
+
+    def __str__(self):
+        return self.titulo
+
+
+class Alerta(models.Model):
+    TIPOS = [('warning', 'Warning'), ('info', 'Info'), ('danger', 'Danger')]
+    id_alerta = models.AutoField(primary_key=True)
+    tipo      = models.CharField(max_length=10, choices=TIPOS)
+    mensaje   = models.TextField()
+    area      = models.CharField(max_length=50, null=True)
+
+    class Meta:
+        db_table = 'Alerta'
+
+
+class Metrica(models.Model):
+    id_metrica  = models.AutoField(primary_key=True)
+    label       = models.CharField(max_length=100)
+    valor       = models.CharField(max_length=50, null=True)
+    sub         = models.CharField(max_length=150, null=True)
+    pct         = models.DecimalField(max_digits=5, decimal_places=2, null=True, blank=True)
+    color       = models.CharField(max_length=80, null=True)
+    text_color  = models.CharField(max_length=80, null=True)
+
+    class Meta:
+        db_table = 'Metrica'
