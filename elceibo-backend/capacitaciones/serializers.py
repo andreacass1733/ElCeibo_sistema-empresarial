@@ -46,3 +46,9 @@ class MetricaSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Metrica
         fields = '__all__'
+
+
+class EmpleadoSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Empleado
+        fields = '__all__'

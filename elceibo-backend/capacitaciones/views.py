@@ -1,7 +1,7 @@
 from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
-from .models import Capacitacion, EmpleadoCapacitacion
+from .models import Capacitacion, EmpleadoCapacitacion, Empleado
 from .serializers import CapacitacionSerializer
 
 
@@ -19,7 +19,7 @@ from rest_framework import viewsets, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from .models import Capacitacion, EmpleadoCapacitacion, Objetivo, Alerta, Metrica
-from .serializers import CapacitacionSerializer, ObjetivoSerializer, AlertaSerializer, MetricaSerializer
+from .serializers import CapacitacionSerializer, ObjetivoSerializer, AlertaSerializer, MetricaSerializer, EmpleadoSerializer
 
 
 # ... tu CapacitacionViewSet ya existente ...
@@ -38,3 +38,8 @@ class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 class MetricaViewSet(viewsets.ReadOnlyModelViewSet):
     queryset         = Metrica.objects.all()
     serializer_class = MetricaSerializer
+
+
+class EmpleadoViewSet(viewsets.ModelViewSet):
+    queryset = Empleado.objects.all()
+    serializer_class = EmpleadoSerializer

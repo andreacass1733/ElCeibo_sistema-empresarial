@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     'corsheaders',
     # Tus apps
     'capacitaciones',
+    'kpis',
 ]
 
 MIDDLEWARE = [

@@ -1,4 +1,7 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+// ─── Config ───────────────────────────────────────────────
+const API_URL = "http://127.0.0.1:8000/api/dashboard/kpis/";
 
 // ─── Tipos ───────────────────────────────────────────────
 type Trend = "up" | "down" | "neutral";
@@ -18,141 +21,71 @@ type DetailItem = { label: string; value: string | number };
 
 type ChartPoint = { mes: string; valor: number };
 
-// ─── Datos simulados (reemplaza con fetch a tu API) ──────
-const kpiData: KPICard[] = [
-    {
-        id: "ventas",
-        label: "Ingresos por Ventas",
-        value: "Bs. 84,320",
-        subtitle: "Total este mes",
-        trend: "up",
-        trendLabel: "+12% vs mes anterior",
-        color: "green",
-        detail: [
-            { label: "Ventas registradas", value: 214 },
-            { label: "Ticket promedio", value: "Bs. 394" },
-            { label: "Sucursal top", value: "Sucursal Central" },
-            { label: "Producto más vendido", value: "Pan de molde" },
-        ],
-    },
-    {
-        id: "produccion",
-        label: "Producción",
-        value: "3,840 u.",
-        subtitle: "Unidades producidas este mes",
-        trend: "up",
-        trendLabel: "+7% vs mes anterior",
-        color: "blue",
-        detail: [
-            { label: "Órdenes completadas", value: 48 },
-            { label: "Empleados en producción", value: 6 },
-            { label: "Producto más producido", value: "Croissant" },
-            { label: "Promedio diario", value: "128 u." },
-        ],
-    },
-    {
-        id: "inventario",
-        label: "Inventario",
-        value: "91%",
-        subtitle: "Nivel de stock promedio",
-        trend: "neutral",
-        trendLabel: "Estable este mes",
-        color: "yellow",
-        detail: [
-            { label: "Productos en stock", value: 18 },
-            { label: "Sucursales abastecidas", value: 3 },
-            { label: "Productos críticos (<10 u.)", value: 2 },
-            { label: "Último reabastecimiento", value: "28 May 2026" },
-        ],
-    },
-    {
-        id: "capacitaciones",
-        label: "Capacitaciones",
-        value: "74%",
-        subtitle: "Tasa de completado",
-        trend: "down",
-        trendLabel: "-5% vs mes anterior",
-        color: "red",
-        detail: [
-            { label: "Capacitaciones activas", value: 4 },
-            { label: "Empleados inscritos", value: 12 },
-            { label: "Empleados completaron", value: 9 },
-            { label: "Calificación promedio", value: "8.3 / 10" },
-        ],
-    },
-    {
-        id: "compras",
-        label: "Compras / Abastecimiento",
-        value: "Bs. 21,500",
-        subtitle: "Gasto en materia prima",
-        trend: "down",
-        trendLabel: "-3% vs mes anterior",
-        color: "yellow",
-        detail: [
-            { label: "Órdenes de compra", value: 11 },
-            { label: "Proveedores activos", value: 5 },
-            { label: "Materia prima más comprada", value: "Harina de trigo" },
-            { label: "Proveedor principal", value: "Molinos del Sur" },
-        ],
-    },
-    {
-        id: "empleados",
-        label: "Rendimiento de Empleados",
-        value: "89%",
-        subtitle: "Productividad promedio",
-        trend: "up",
-        trendLabel: "+2% vs mes anterior",
-        color: "green",
-        detail: [
-            { label: "Total empleados activos", value: 18 },
-            { label: "Ventas por empleado (avg)", value: "Bs. 4,684" },
-            { label: "Empleado destaque", value: "Ana Quispe" },
-            { label: "Ausentismo", value: "2%" },
-        ],
-    },
-];
-
-// Datos para mini gráfico de línea (SVG sparkline)
-const ventasMensuales: ChartPoint[] = [
-    { mes: "Ene", valor: 62000 },
-    { mes: "Feb", valor: 58000 },
-    { mes: "Mar", valor: 71000 },
-    { mes: "Abr", valor: 67000 },
-    { mes: "May", valor: 84320 },
-];
+// ─── Tipo de la respuesta del backend ─────────────────────
+type KPIResponse = {
+    // Resumen
+    ingresos: number;
+    costos: number;
+    utilidad: number;
+    margen_bruto: number;
+    // Ventas
+    ventas_registradas: number;
+    ticket_promedio: number;
+    producto_top: string;
+    sucursal_top: string;           // query pendiente en backend
+    // Producción
+    produccion: number;
+    ordenes_produccion: number;
+    producto_produccion_top: string;
+    empleados_produccion: number;   // query pendiente en backend
+    promedio_diario: number;        // query pendiente en backend
+    // Inventario
+    stock: number;
+    productos_stock: number;
+    stock_critico: number;
+    ultimo_reabastecimiento: string; // query pendiente en backend
+    sucursales_abastecidas: number;  // query pendiente en backend
+    // Compras
+    compras: number;
+    gasto_compras: number;
+    materia_top: string;
+    proveedor_top: string;           // query pendiente en backend
+    proveedores_activos: number;     // query pendiente en backend
+    // RRHH
+    empleados: number;
+    capacitaciones: number;
+    capacitaciones_activas: number;  // query pendiente en backend
+    empleados_inscritos: number;     // query pendiente en backend
+    empleados_completaron: number;   // query pendiente en backend
+    calificacion_promedio: number;   // query pendiente en backend
+    ventas_por_empleado: number;     // query pendiente en backend
+    empleado_destaque: string;       // query pendiente en backend
+    ausentismo: number | null;
+    // Histórico ventas (para sparkline)
+    ventas_mensuales: { mes: string; valor: number }[];
+};
 
 // ─── Colores ──────────────────────────────────────────────
 const colorMap = {
     green: {
         text: "text-[#8b5e2a] dark:text-[#f5deb3]",
-        badge:
-            "bg-[#f3e2c7] text-[#8b5e2a] dark:bg-[#2a1a0d] dark:text-[#f5deb3]",
+        badge: "bg-[#f3e2c7] text-[#8b5e2a] dark:bg-[#2a1a0d] dark:text-[#f5deb3]",
         bar: "bg-[#8b5e2a]",
-        dot: "bg-[#8b5e2a]",
     },
-
     blue: {
         text: "text-[#a06e35] dark:text-[#e8b87a]",
-        badge:
-            "bg-[#f1dcc0] text-[#a06e35] dark:bg-[#332012] dark:text-[#e8b87a]",
+        badge: "bg-[#f1dcc0] text-[#a06e35] dark:bg-[#332012] dark:text-[#e8b87a]",
         bar: "bg-[#a06e35]",
-        dot: "bg-[#a06e35]",
     },
-
     yellow: {
         text: "text-[#c28a3d] dark:text-[#f0c78a]",
-        badge:
-            "bg-[#f6e7d1] text-[#b67b2d] dark:bg-[#3a2412] dark:text-[#f0c78a]",
+        badge: "bg-[#f6e7d1] text-[#b67b2d] dark:bg-[#3a2412] dark:text-[#f0c78a]",
         bar: "bg-[#c28a3d]",
-        dot: "bg-[#c28a3d]",
     },
-
     red: {
         text: "text-[#b06b4f] dark:text-[#d9a58d]",
-        badge:
-            "bg-[#f2ddd2] text-[#a65f43] dark:bg-[#3a2018] dark:text-[#d9a58d]",
+        badge: "bg-[#f2ddd2] text-[#a65f43] dark:bg-[#3a2018] dark:text-[#d9a58d]",
         bar: "bg-[#b06b4f]",
-        dot: "bg-[#b06b4f]",
     },
 };
 
@@ -162,6 +95,112 @@ const trendColor = {
     down: "text-[#b06b4f] dark:text-[#d9a58d]",
     neutral: "text-[#7a5c3a] dark:text-[#b08a60]",
 };
+
+// ─── Helpers ──────────────────────────────────────────────
+const bs = (n: number | null | undefined) =>
+    n != null ? `Bs. ${n.toLocaleString("es-BO", { minimumFractionDigits: 0, maximumFractionDigits: 0 })}` : "—";
+const pct = (n: number | null | undefined) =>
+    n != null ? `${n.toFixed(1)}%` : "—";
+const fallback = (v: string | number | undefined | null, fb = "Sin datos") =>
+    v !== undefined && v !== null && v !== "" ? String(v) : fb;
+
+// ─── Construir KPI cards desde la respuesta de la API ─────
+function buildKPICards(d: KPIResponse): KPICard[] {
+    return [
+        {
+            id: "ventas",
+            label: "Ingresos por Ventas",
+            value: bs(d.ingresos),
+            subtitle: "Total acumulado",
+            trend: "up",
+            trendLabel: `${d.ventas_registradas} ventas registradas`,
+            color: "green",
+            detail: [
+                { label: "Ventas registradas", value: d.ventas_registradas },
+                { label: "Ticket promedio", value: bs(d.ticket_promedio) },
+                { label: "Sucursal top", value: fallback(d.sucursal_top) },
+                { label: "Producto más vendido", value: fallback(d.producto_top) },
+            ],
+        },
+        {
+            id: "produccion",
+            label: "Producción",
+            value: `${d.produccion.toLocaleString()} u.`,
+            subtitle: "Unidades producidas",
+            trend: "up",
+            trendLabel: `${d.ordenes_produccion} órdenes completadas`,
+            color: "blue",
+            detail: [
+                { label: "Órdenes completadas", value: d.ordenes_produccion },
+                { label: "Empleados en producción", value: fallback(d.empleados_produccion, "—") },
+                { label: "Producto más producido", value: fallback(d.producto_produccion_top) },
+                { label: "Promedio diario", value: fallback(d.promedio_diario ? `${d.promedio_diario} u.` : null, "—") },
+            ],
+        },
+        {
+            id: "inventario",
+            label: "Inventario",
+            value: `${d.stock.toLocaleString()} u.`,
+            subtitle: "Stock total disponible",
+            trend: d.stock_critico > 0 ? "down" : "neutral",
+            trendLabel: d.stock_critico > 0
+                ? `${d.stock_critico} producto(s) en nivel crítico`
+                : "Stock en niveles normales",
+            color: d.stock_critico > 0 ? "yellow" : "green",
+            detail: [
+                { label: "Productos en stock", value: d.productos_stock },
+                { label: "Sucursales abastecidas", value: fallback(d.sucursales_abastecidas, "—") },
+                { label: "Productos críticos (<10 u.)", value: d.stock_critico },
+                { label: "Último reabastecimiento", value: fallback(d.ultimo_reabastecimiento) },
+            ],
+        },
+        {
+            id: "capacitaciones",
+            label: "Capacitaciones",
+            value: pct(d.capacitaciones),
+            subtitle: "Tasa de completado",
+            trend: d.capacitaciones >= 80 ? "up" : d.capacitaciones >= 60 ? "neutral" : "down",
+            trendLabel: d.capacitaciones >= 80 ? "Buen rendimiento" : d.capacitaciones >= 60 ? "Progreso aceptable" : "Requiere atención",
+            color: d.capacitaciones >= 75 ? "green" : d.capacitaciones >= 50 ? "yellow" : "red",
+            detail: [
+                { label: "Capacitaciones activas", value: fallback(d.capacitaciones_activas, "—") },
+                { label: "Empleados inscritos", value: fallback(d.empleados_inscritos, "—") },
+                { label: "Empleados completaron", value: fallback(d.empleados_completaron, "—") },
+                { label: "Calificación promedio", value: d.calificacion_promedio ? `${d.calificacion_promedio} / 10` : "—" },
+            ],
+        },
+        {
+            id: "compras",
+            label: "Compras / Abastecimiento",
+            value: bs(d.gasto_compras),
+            subtitle: "Gasto en materia prima",
+            trend: "neutral",
+            trendLabel: `${d.compras} órdenes de compra`,
+            color: "yellow",
+            detail: [
+                { label: "Órdenes de compra", value: d.compras },
+                { label: "Proveedores activos", value: fallback(d.proveedores_activos, "—") },
+                { label: "Materia prima más comprada", value: fallback(d.materia_top) },
+                { label: "Proveedor principal", value: fallback(d.proveedor_top) },
+            ],
+        },
+        {
+            id: "empleados",
+            label: "Rendimiento de Empleados",
+            value: `${d.empleados} emp.`,
+            subtitle: "Total empleados activos",
+            trend: "neutral",
+            trendLabel: d.ventas_por_empleado != null ? `Bs. ${d.ventas_por_empleado.toFixed(0)} ventas/empleado` : "Sin datos de rendimiento",
+            color: "green",
+            detail: [
+                { label: "Total empleados activos", value: d.empleados },
+                { label: "Ventas por empleado (avg)", value: d.ventas_por_empleado ? bs(d.ventas_por_empleado) : "—" },
+                { label: "Empleado destaque", value: fallback(d.empleado_destaque) },
+                { label: "Ausentismo", value: pct(d.ausentismo) },
+            ],
+        },
+    ];
+}
 
 // ─── Sparkline SVG ────────────────────────────────────────
 function Sparkline({ points }: { points: ChartPoint[] }) {
@@ -191,16 +230,28 @@ function Sparkline({ points }: { points: ChartPoint[] }) {
 }
 
 // ─── Modal de detalle ─────────────────────────────────────
-function DetailModal({ kpi, onClose }: { kpi: KPICard; onClose: () => void }) {
+function DetailModal({
+    kpi,
+    onClose,
+    sparkData,
+}: {
+    kpi: KPICard;
+    onClose: () => void;
+    sparkData: ChartPoint[];
+}) {
     const c = colorMap[kpi.color];
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4">
             <div className="absolute inset-0 bg-black/50 backdrop-blur-sm" onClick={onClose} />
-            <div className="relative z-10 w-full max-w-lg mx-4 rounded-2xl bg-white dark:bg-[#18110d] shadow-2xl">
+            <div className="relative z-10 w-full sm:max-w-lg flex flex-col rounded-t-3xl sm:rounded-2xl bg-white dark:bg-[#18110d] shadow-2xl max-h-[92dvh] sm:max-h-[85vh]">
+                {/* Handle móvil */}
+                <div className="flex justify-center pt-3 pb-1 sm:hidden">
+                    <div className="w-10 h-1 rounded-full bg-gray-300 dark:bg-[#6f4e37]" />
+                </div>
                 {/* Header */}
-                <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 dark:border-[#3a2a1a]">
+                <div className="flex items-center justify-between px-5 sm:px-6 py-3 sm:py-4 border-b border-gray-200 dark:border-[#3a2a1a] flex-shrink-0">
                     <div>
-                        <h2 className="text-xl font-bold text-gray-800 dark:text-[#f5deb3]">{kpi.label}</h2>
+                        <h2 className="text-lg sm:text-xl font-bold text-gray-800 dark:text-[#f5deb3]">{kpi.label}</h2>
                         <p className="text-sm text-gray-500 dark:text-[#cbb08b]">{kpi.subtitle}</p>
                     </div>
                     <button
@@ -209,36 +260,37 @@ function DetailModal({ kpi, onClose }: { kpi: KPICard; onClose: () => void }) {
                     >✕</button>
                 </div>
 
-                {/* Valor grande */}
-                <div className="px-6 py-5 flex items-end gap-4">
-                    <span className={`text-5xl font-bold ${c.text}`}>{kpi.value}</span>
-                    <span className={`mb-1 text-sm font-semibold ${trendColor[kpi.trend]}`}>
-                        {trendIcon[kpi.trend]} {kpi.trendLabel}
-                    </span>
-                </div>
+                {/* Body con scroll */}
+                <div className="overflow-y-auto flex-1 px-5 sm:px-6 py-4">
+                    {/* Valor grande */}
+                    <div className="flex items-end gap-4 mb-4">
+                        <span className={`text-4xl sm:text-5xl font-bold ${c.text}`}>{kpi.value}</span>
+                        <span className={`mb-1 text-sm font-semibold ${trendColor[kpi.trend]}`}>
+                            {trendIcon[kpi.trend]} {kpi.trendLabel}
+                        </span>
+                    </div>
 
-                {/* Sparkline solo en ventas */}
-                {kpi.id === "ventas" && (
-                    <div className="px-6 pb-4">
-                        <p className="text-xs text-gray-500 dark:text-[#cbb08b] mb-2">Tendencia últimos 5 meses</p>
-                        <div className="flex items-end gap-3">
-                            <Sparkline points={ventasMensuales} />
-                            <div className="flex gap-2 flex-wrap">
-                                {ventasMensuales.map((p) => (
-                                    <div key={p.mes} className="text-center">
-                                        <div className="text-xs text-gray-400 dark:text-[#7a5c3a]">{p.mes}</div>
-                                        <div className="text-xs font-semibold text-gray-700 dark:text-[#cbb08b]">
-                                            {(p.valor / 1000).toFixed(0)}k
+                    {/* Sparkline solo en ventas */}
+                    {kpi.id === "ventas" && sparkData.length > 0 && (
+                        <div className="mb-4">
+                            <p className="text-xs text-gray-500 dark:text-[#cbb08b] mb-2">Tendencia últimos meses</p>
+                            <div className="flex items-end gap-3">
+                                <Sparkline points={sparkData} />
+                                <div className="flex gap-2 flex-wrap">
+                                    {sparkData.map((p) => (
+                                        <div key={p.mes} className="text-center">
+                                            <div className="text-xs text-gray-400 dark:text-[#7a5c3a]">{p.mes}</div>
+                                            <div className="text-xs font-semibold text-gray-700 dark:text-[#cbb08b]">
+                                                {(p.valor / 1000).toFixed(0)}k
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         </div>
-                    </div>
-                )}
+                    )}
 
-                {/* Detalles */}
-                <div className="px-6 pb-6">
+                    {/* Detalles */}
                     <div className="rounded-xl border border-gray-100 dark:border-[#3a2a1a] overflow-hidden">
                         {kpi.detail.map((d, i) => (
                             <div
@@ -271,19 +323,57 @@ function ProgressBar({ value, color }: { value: number; color: string }) {
     );
 }
 
+// ─── Skeleton loader ──────────────────────────────────────
+function Skeleton() {
+    return (
+        <div className="animate-pulse rounded-2xl bg-white dark:bg-[#18110d] p-6 shadow-sm h-44">
+            <div className="h-3 w-2/3 rounded bg-gray-200 dark:bg-[#2a1a0d] mb-4" />
+            <div className="h-8 w-1/2 rounded bg-gray-200 dark:bg-[#2a1a0d] mb-3" />
+            <div className="h-2 w-full rounded-full bg-gray-100 dark:bg-[#2a1a0d]" />
+        </div>
+    );
+}
+
 // ─── Componente principal ─────────────────────────────────
 export default function KPI() {
+    const [kpiCards, setKpiCards] = useState<KPICard[]>([]);
+    const [sparkData, setSparkData] = useState<ChartPoint[]>([]);
+    const [summary, setSummary] = useState<Pick<KPIResponse, "ingresos" | "utilidad" | "margen_bruto"> | null>(null);
     const [selected, setSelected] = useState<KPICard | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
 
-    // Extraer valor numérico para barra de progreso (solo los que son %)
+    useEffect(() => {
+        fetch(API_URL)
+            .then((res) => {
+                if (!res.ok) throw new Error("Error al conectar con el servidor");
+                return res.json() as Promise<KPIResponse>;
+            })
+            .then((data) => {
+                setKpiCards(buildKPICards(data));
+                setSparkData(data.ventas_mensuales ?? []);
+                setSummary({
+                    ingresos: data.ingresos,
+                    utilidad: data.utilidad,
+                    margen_bruto: data.margen_bruto,
+                });
+            })
+            .catch((e) => setError(e.message))
+            .finally(() => setLoading(false));
+    }, []);
+
     const getPercent = (v: string) => {
         const n = parseFloat(v);
         return isNaN(n) ? null : n;
     };
 
-    const totalVentas = 84320;
-    const totalCompras = 21500;
-    const margen = (((totalVentas - totalCompras) / totalVentas) * 100).toFixed(1);
+    if (error) {
+        return (
+            <div className="p-6">
+                <p className="text-red-500 dark:text-red-400">⚠ {error}</p>
+            </div>
+        );
+    }
 
     return (
         <div className="p-6">
@@ -296,71 +386,77 @@ export default function KPI() {
 
             {/* Banner resumen */}
             <div className="mt-6 rounded-2xl bg-white dark:bg-[#18110d] shadow-sm p-5 flex flex-wrap gap-6">
-                <div>
-                    <p className="text-xs text-gray-500 dark:text-[#cbb08b] uppercase tracking-wide">Ingresos netos</p>
-                    <p className="text-2xl font-bold text-gray-800 dark:text-[#f5deb3]">Bs. 62,820</p>
-                </div>
-                <div>
-                    <p className="text-xs text-gray-500 dark:text-[#cbb08b] uppercase tracking-wide">Margen bruto</p>
-                    <p className="text-2xl font-bold text-[#8b5e2a] dark:text-[#f5deb3]">{margen}%</p>
-                </div>
-                <div>
-                    <p className="text-xs text-gray-500 dark:text-[#cbb08b] uppercase tracking-wide">Unidades vendidas</p>
-                    <p className="text-2xl font-bold text-gray-800 dark:text-[#f5deb3]">3,210 u.</p>
-                </div>
-                <div>
-                    <p className="text-xs text-gray-500 dark:text-[#cbb08b] uppercase tracking-wide">Período</p>
-                    <p className="text-2xl font-bold text-gray-800 dark:text-[#f5deb3]">Mayo 2026</p>
-                </div>
+                {loading ? (
+                    <>
+                        {[1, 2, 3, 4].map((i) => (
+                            <div key={i} className="animate-pulse">
+                                <div className="h-2 w-24 rounded bg-gray-200 dark:bg-[#2a1a0d] mb-2" />
+                                <div className="h-7 w-28 rounded bg-gray-200 dark:bg-[#2a1a0d]" />
+                            </div>
+                        ))}
+                    </>
+                ) : summary ? (
+                    <>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-[#cbb08b] uppercase tracking-wide">Ingresos totales</p>
+                            <p className="text-2xl font-bold text-gray-800 dark:text-[#f5deb3]">{bs(summary.ingresos)}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-[#cbb08b] uppercase tracking-wide">Utilidad neta</p>
+                            <p className="text-2xl font-bold text-[#8b5e2a] dark:text-[#f5deb3]">{bs(summary.utilidad)}</p>
+                        </div>
+                        <div>
+                            <p className="text-xs text-gray-500 dark:text-[#cbb08b] uppercase tracking-wide">Margen bruto</p>
+                            <p className="text-2xl font-bold text-gray-800 dark:text-[#f5deb3]">{pct(summary.margen_bruto)}</p>
+                        </div>
+                    </>
+                ) : null}
             </div>
 
             {/* Grid de KPIs */}
             <div className="mt-6 grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-                {kpiData.map((kpi) => {
-                    const c = colorMap[kpi.color];
-                    const pct = getPercent(kpi.value);
-                    return (
-                        <button
-                            key={kpi.id}
-                            onClick={() => setSelected(kpi)}
-                            className="text-left rounded-2xl bg-white dark:bg-[#18110d] p-6 shadow-sm hover:shadow-md dark:hover:shadow-[#3a2a1a]/40 transition-shadow group cursor-pointer"
-                        >
-                            {/* Top row */}
-                            <div className="flex items-start justify-between">
-                                <h2 className="text-sm font-semibold text-gray-600 dark:text-[#cbb08b] uppercase tracking-wide">
-                                    {kpi.label}
-                                </h2>
-                                <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${c.badge}`}>
-                                    {trendIcon[kpi.trend]}
-                                </span>
-                            </div>
-
-                            {/* Valor */}
-                            <p className={`mt-3 text-4xl font-bold ${c.text}`}>{kpi.value}</p>
-
-                            {/* Barra (solo si es %) */}
-                            {pct !== null && <ProgressBar value={pct} color={c.bar} />}
-
-                            {/* Trend */}
-                            <p className={`mt-3 text-xs font-medium ${trendColor[kpi.trend]}`}>
-                                {kpi.trendLabel}
-                            </p>
-
-                            {/* Subtitle + Ver detalle */}
-                            <div className="mt-3 flex items-center justify-between">
-                                <span className="text-xs text-gray-400 dark:text-[#7a5c3a]">{kpi.subtitle}</span>
-                                <span className="text-xs font-medium text-amber-600 dark:text-[#e8b87a] group-hover:underline">
-                                    Ver detalle →
-                                </span>
-                            </div>
-                        </button>
-                    );
-                })}
+                {loading
+                    ? Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} />)
+                    : kpiCards.map((kpi) => {
+                        const c = colorMap[kpi.color];
+                        const p = getPercent(kpi.value);
+                        return (
+                            <button
+                                key={kpi.id}
+                                onClick={() => setSelected(kpi)}
+                                className="text-left rounded-2xl bg-white dark:bg-[#18110d] p-6 shadow-sm hover:shadow-md dark:hover:shadow-[#3a2a1a]/40 transition-shadow group cursor-pointer"
+                            >
+                                <div className="flex items-start justify-between">
+                                    <h2 className="text-sm font-semibold text-gray-600 dark:text-[#cbb08b] uppercase tracking-wide">
+                                        {kpi.label}
+                                    </h2>
+                                    <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${c.badge}`}>
+                                        {trendIcon[kpi.trend]}
+                                    </span>
+                                </div>
+                                <p className={`mt-3 text-4xl font-bold ${c.text}`}>{kpi.value}</p>
+                                {p !== null && <ProgressBar value={p} color={c.bar} />}
+                                <p className={`mt-3 text-xs font-medium ${trendColor[kpi.trend]}`}>
+                                    {kpi.trendLabel}
+                                </p>
+                                <div className="mt-3 flex items-center justify-between">
+                                    <span className="text-xs text-gray-400 dark:text-[#7a5c3a]">{kpi.subtitle}</span>
+                                    <span className="text-xs font-medium text-amber-600 dark:text-[#e8b87a] group-hover:underline">
+                                        Ver detalle →
+                                    </span>
+                                </div>
+                            </button>
+                        );
+                    })}
             </div>
 
             {/* Modal */}
             {selected && (
-                <DetailModal kpi={selected} onClose={() => setSelected(null)} />
+                <DetailModal
+                    kpi={selected}
+                    sparkData={sparkData}
+                    onClose={() => setSelected(null)}
+                />
             )}
         </div>
     );
