@@ -1,5 +1,7 @@
+# =========================
 # Logs
-logs
+# =========================
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,57 +9,138 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# =========================
 # Node / React / Vite
-node_modules
-dist
-dist-ssr
+# =========================
+node_modules/
+dist/
+dist-ssr/
+coverage/
 *.local
 
-# Python / Django
+# =========================
+# Python
+# =========================
 __pycache__/
 *.py[cod]
 *$py.class
+*.pyo
+*.pyd
 
-# Virtual environments
+# =========================
+# Virtual Environments
+# =========================
 venv/
 env/
 .venv/
 
-# Variables de entorno
+**/venv/
+**/env/
+**/.venv/
+
+# =========================
+# Environment Variables
+# =========================
 .env
 .env.*
 !.env.example
 
+# =========================
 # Django
+# =========================
 db.sqlite3
 db.sqlite3-journal
 
-# Archivos estáticos y media generados
 staticfiles/
 media/
 
-# Cache de migraciones
-**/migrations/__pycache__/
-
-# Pruebas y cobertura
+# Python cache
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.tox/
+.nox/
+
+# Coverage
 .coverage
+.coverage.*
 htmlcov/
 
-# Exportaciones de base de datos
+# Django migrations cache
+**/migrations/__pycache__/
+
+# =========================
+# Database Backups
+# =========================
 *.sql
 *.dump
 *.bak
 
-# Editor directories and files
+# =========================
+# IDEs
+# =========================
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
-Thumbs.db
 
+.idea/
+
+# Visual Studio
 *.suo
+*.user
+*.userosscache
+*.sln.docstates
 *.ntvs*
 *.njsproj
 *.sln
-*.sw?
+
+# =========================
+# Operating Systems
+# =========================
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# =========================
+# Temporary Files
+# =========================
+*.tmp
+*.temp
+*.swp
+*.swo
+*~
+
+# =========================
+# Build Artifacts
+# =========================
+build/
+out/
+target/
+
+# =========================
+# Package Managers
+# =========================
+.pnpm-store/
+.npm/
+.yarn/
+.yarn/cache/
+.yarn/unplugged/
+.yarn/build-state.yml
+.yarn/install-state.gz
+
+# =========================
+# Python Packaging
+# =========================
+*.egg-info/
+.eggs/
+dist/
+build/
+
+# =========================
+# Jupyter
+# =========================
+.ipynb_checkpoints/
+
+# =========================
+# TypeScript
+# =========================
+*.tsbuildinfo

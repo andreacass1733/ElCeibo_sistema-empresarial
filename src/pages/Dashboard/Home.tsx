@@ -396,6 +396,25 @@ export default function Home() {
             <KpiPerspectivas />
           </Card>
 
+          {/* ── EMBED LOOKER / Data Studio ── */}
+          <Card className="col-span-12 xl:col-span-7">
+            <h3 className="mb-4 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Panel externo (Looker / Data Studio)</h3>
+            <p className="mb-3 text-sm text-[#7A5C46] dark:text-[#B89B84]">Informe embebido desde Looker / Google Data Studio.</p>
+            <div className="w-full">
+              <div className="relative w-full pb-[75%] rounded-lg overflow-hidden border border-stone-200 dark:border-[#3a2a20]">
+                <iframe
+                  title="Looker Studio Report"
+                  src="https://datastudio.google.com/embed/reporting/54f7277e-8b49-490a-8c37-48e88d155fa8/page/VoS0F"
+                  className="absolute inset-0 w-full h-full"
+                  frameBorder={0}
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  sandbox="allow-storage-access-by-user-activation allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"
+                />
+              </div>
+            </div>
+          </Card>
+
           {/* ── CAPACITACIONES ── */}
           <Card className="col-span-12 xl:col-span-7">
             <h3 className="mb-5 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Progreso de Capacitaciones</h3>
