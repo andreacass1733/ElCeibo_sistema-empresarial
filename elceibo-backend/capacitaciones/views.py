@@ -1,8 +1,12 @@
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from .models import Capacitacion, EmpleadoCapacitacion
-from .serializers import CapacitacionSerializer
+from rest_framework import viewsets
+from .models import Capacitacion, Objetivo, Alerta, Metrica, Reporte
+from .serializers import (
+    CapacitacionSerializer,
+    ObjetivoSerializer,
+    AlertaSerializer,
+    MetricaSerializer,
+    ReporteSerializer,
+)
 
 
 class CapacitacionViewSet(viewsets.ReadOnlyModelViewSet):
@@ -15,18 +19,8 @@ class CapacitacionViewSet(viewsets.ReadOnlyModelViewSet):
     ).all()
     serializer_class = CapacitacionSerializer
 
-from rest_framework import viewsets, status
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from .models import Capacitacion, EmpleadoCapacitacion, Objetivo, Alerta, Metrica
-from .serializers import CapacitacionSerializer, ObjetivoSerializer, AlertaSerializer, MetricaSerializer
-
-
-# ... tu CapacitacionViewSet ya existente ...
-
-
 class ObjetivoViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset         = Objetivo.objects.all()
+    queryset = Objetivo.objects.all()
     serializer_class = ObjetivoSerializer
 
 
@@ -38,3 +32,8 @@ class AlertaViewSet(viewsets.ReadOnlyModelViewSet):
 class MetricaViewSet(viewsets.ReadOnlyModelViewSet):
     queryset         = Metrica.objects.all()
     serializer_class = MetricaSerializer
+
+
+class ReporteViewSet(viewsets.ReadOnlyModelViewSet):
+    queryset = Reporte.objects.all()
+    serializer_class = ReporteSerializer

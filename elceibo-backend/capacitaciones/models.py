@@ -95,3 +95,24 @@ class Metrica(models.Model):
 
     class Meta:
         db_table = 'Metrica'
+
+
+class Reporte(models.Model):
+    ESTADOS = [
+        ('listo', 'Listo'),
+        ('pendiente', 'Pendiente'),
+        ('error', 'Error'),
+    ]
+
+    id_reporte = models.AutoField(primary_key=True)
+    nombre     = models.CharField(max_length=200)
+    categoria  = models.CharField(max_length=50, null=True)
+    fecha      = models.DateField(null=True)
+    estado     = models.CharField(max_length=20, choices=ESTADOS, default='listo')
+    detalle    = models.JSONField(null=True, blank=True, default=dict)
+
+    class Meta:
+        db_table = 'Reporte'
+
+    def __str__(self):
+        return self.nombre or ''
