@@ -1,0 +1,13 @@
+from django.urls import path, include
+from rest_framework.routers import DefaultRouter
+from .views import CapacitacionViewSet, ObjetivoViewSet, AlertaViewSet, MetricaViewSet
+
+router = DefaultRouter()
+router.register(r'capacitaciones', CapacitacionViewSet)
+router.register(r'objetivos',      ObjetivoViewSet)
+router.register(r'alertas',        AlertaViewSet)
+router.register(r'metricas',       MetricaViewSet)
+
+urlpatterns = [
+    path('', include(router.urls)),
+]
