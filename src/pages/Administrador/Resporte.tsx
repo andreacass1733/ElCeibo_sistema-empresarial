@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getReportes } from "../../services/reportes";
 
 // ——— Tipos ———
 type Categoria = "ventas" | "produccion" | "empleados" | "inventario" | "compras";
@@ -12,6 +13,7 @@ interface Reporte {
   cat: Categoria;
   fecha: string;
   estado: Estado;
+  detalle: ModalData;
 }
 
 interface ModalData {
@@ -20,111 +22,6 @@ interface ModalData {
   headers: string[];
   rows: string[][];
 }
-
-// ——— Datos simulados (reemplaza con fetch a tu API/DB) ———
-const reportes: Reporte[] = [
-  { id: 1, nombre: "Ventas por sucursal — mayo 2026", cat: "ventas", fecha: "28/05/2026", estado: "listo" },
-  { id: 2, nombre: "Producción mensual de chocolates", cat: "produccion", fecha: "27/05/2026", estado: "listo" },
-  { id: 3, nombre: "Rendimiento de empleados", cat: "empleados", fecha: "25/05/2026", estado: "listo" },
-  { id: 4, nombre: "Inventario por sucursal", cat: "inventario", fecha: "24/05/2026", estado: "listo" },
-  { id: 5, nombre: "Capacitaciones completadas", cat: "empleados", fecha: "22/05/2026", estado: "listo" },
-  { id: 6, nombre: "Compras a proveedores — Q2 2026", cat: "compras", fecha: "20/05/2026", estado: "listo" },
-  { id: 7, nombre: "Top productos más vendidos", cat: "ventas", fecha: "18/05/2026", estado: "pendiente" },
-  { id: 8, nombre: "Envíos entre sucursales", cat: "inventario", fecha: "15/05/2026", estado: "listo" },
-];
-
-const modalesData: Record<number, ModalData> = {
-  1: {
-    stats: [{ n: "Bs 48,720", l: "Total vendido" }, { n: "312", l: "Unidades" }, { n: "3", l: "Sucursales" }, { n: "5", l: "Empleados" }],
-    section: "Ventas por sucursal",
-    headers: ["Sucursal", "Empleado", "Productos", "Total (Bs)"],
-    rows: [
-      ["Sucursal Central", "Carlos Mamani", "Trufas, Bombones", "18,400"],
-      ["Sucursal Norte", "Ana Quispe", "Tabletas, Trufas", "16,220"],
-      ["Sucursal Sur", "Luis Flores", "Bombones", "14,100"],
-    ],
-  },
-  2: {
-    stats: [{ n: "2,840", l: "Unidades prod." }, { n: "6", l: "Productos" }, { n: "8", l: "Empleados" }, { n: "22", l: "Días activos" }],
-    section: "Producción por producto",
-    headers: ["Producto", "Tipo", "Cantidad", "Empleado encargado"],
-    rows: [
-      ["Trufa de maracuyá", "Trufa", "640", "Pedro Condori"],
-      ["Tableta 70%", "Tableta", "800", "María Ticona"],
-      ["Bombón relleno", "Bombón", "520", "Juan Mamani"],
-      ["Chocolate blanco", "Tableta", "880", "Ana Quispe"],
-    ],
-  },
-  3: {
-    stats: [{ n: "12", l: "Empleados" }, { n: "3", l: "Cargos" }, { n: "4.2", l: "Calif. prom." }, { n: "85%", l: "Puntualidad" }],
-    section: "Empleados activos",
-    headers: ["Nombre", "Cargo", "Capacitaciones", "Estado"],
-    rows: [
-      ["Carlos Mamani", "Vendedor", "3", "Activo"],
-      ["Ana Quispe", "Producción", "2", "Activo"],
-      ["Luis Flores", "Vendedor", "1", "Activo"],
-      ["Pedro Condori", "Administrador", "4", "Activo"],
-      ["María Ticona", "Producción", "2", "Permiso"],
-    ],
-  },
-  4: {
-    stats: [{ n: "4,210", l: "Unidades total" }, { n: "3", l: "Sucursales" }, { n: "8", l: "Productos" }, { n: "12%", l: "Stock bajo" }],
-    section: "Inventario actual",
-    headers: ["Producto", "Sucursal", "Stock", "Alerta"],
-    rows: [
-      ["Trufa de maracuyá", "Central", "380", "OK"],
-      ["Tableta 70%", "Norte", "120", "Bajo"],
-      ["Bombón relleno", "Sur", "560", "OK"],
-      ["Chocolate blanco", "Central", "45", "Crítico"],
-    ],
-  },
-  5: {
-    stats: [{ n: "8", l: "Capacitaciones" }, { n: "24", l: "Participantes" }, { n: "87%", l: "Completado" }, { n: "Bs 4,200", l: "Inversión" }],
-    section: "Detalle capacitaciones",
-    headers: ["Capacitación", "Instructor", "Empleados", "Estado"],
-    rows: [
-      ["Manipulación de chocolate", "Ing. Rojas", "6", "Completado"],
-      ["Atención al cliente", "Lic. Vargas", "8", "Completado"],
-      ["Seguridad alimentaria", "Ing. Paz", "5", "En curso"],
-      ["Control de calidad", "Ing. Rojas", "5", "Completado"],
-    ],
-  },
-  6: {
-    stats: [{ n: "Bs 28,400", l: "Total compras" }, { n: "5", l: "Proveedores" }, { n: "12", l: "Materias primas" }, { n: "8", l: "Órdenes" }],
-    section: "Compras a proveedores",
-    headers: ["Proveedor", "Materia prima", "Cantidad", "Monto (Bs)"],
-    rows: [
-      ["Cacao del Norte", "Cacao en grano", "500 kg", "8,200"],
-      ["Azúcares Andinos", "Azúcar refinada", "300 kg", "3,600"],
-      ["Dairy Bolivia", "Leche en polvo", "200 kg", "5,400"],
-      ["Frutas Tropicales", "Maracuyá", "150 kg", "2,800"],
-      ["Cacao del Norte", "Manteca de cacao", "180 kg", "8,400"],
-    ],
-  },
-  7: {
-    stats: [{ n: "Top 5", l: "Productos" }, { n: "980", l: "Unidades" }, { n: "Bs 32,100", l: "Ingreso" }, { n: "mayo", l: "Período" }],
-    section: "Productos más vendidos",
-    headers: ["Producto", "Unidades", "Ingreso (Bs)", "Participación"],
-    rows: [
-      ["Tableta 70%", "320", "10,240", "32.7%"],
-      ["Trufa de maracuyá", "280", "9,800", "30.5%"],
-      ["Bombón relleno", "180", "5,580", "17.4%"],
-      ["Chocolate blanco", "120", "4,080", "12.7%"],
-      ["Kit regalo", "80", "2,400", "7.5%"],
-    ],
-  },
-  8: {
-    stats: [{ n: "18", l: "Envíos" }, { n: "3", l: "Rutas" }, { n: "1,240", l: "Unidades" }, { n: "Bs 420", l: "Costo logística" }],
-    section: "Envíos entre sucursales",
-    headers: ["Origen", "Destino", "Producto", "Unidades"],
-    rows: [
-      ["Planta Central", "Sucursal Norte", "Tabletas 70%", "220"],
-      ["Planta Central", "Sucursal Sur", "Bombones rellenos", "180"],
-      ["Sucursal Norte", "Sucursal Sur", "Trufas maracuyá", "150"],
-      ["Planta Central", "Sucursal Norte", "Chocolate blanco", "90"],
-    ],
-  },
-};
 
 // ——— Helpers de estilo ———
 const catLabel: Record<Categoria, string> = {
@@ -162,7 +59,7 @@ function EstadoChip({ estado }: { estado: Estado }) {
 
 // ——— Modal ———
 function Modal({ reporte, onClose }: { reporte: Reporte; onClose: () => void }) {
-  const data = modalesData[reporte.id];
+  const data = reporte.detalle;
   if (!data) return null;
 
   return (
@@ -253,8 +150,20 @@ function Modal({ reporte, onClose }: { reporte: Reporte; onClose: () => void }) 
 
 // ——— Componente principal ———
 export default function Reporte() {
+  const [reportes, setReportes] = useState<Reporte[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [filtro, setFiltro] = useState<Categoria | "all">("all");
   const [modalReporte, setModalReporte] = useState<Reporte | null>(null);
+
+  useEffect(() => {
+    setLoading(true);
+    setError(null);
+    getReportes()
+      .then((data) => setReportes(data))
+      .catch((err) => setError(err.message || "Error al cargar los reportes"))
+      .finally(() => setLoading(false));
+  }, []);
 
   const filtrados = filtro === "all" ? reportes : reportes.filter((r) => r.cat === filtro);
 
@@ -282,7 +191,22 @@ export default function Reporte() {
         Visualización de reportes empresariales.
       </p>
 
-      {/* Filtros */}
+      {loading && (
+        <div className="mt-6 flex items-center justify-center p-8">
+          <div className="w-10 h-10 rounded-full border-4 border-amber-500 border-t-transparent animate-spin" />
+        </div>
+      )}
+
+      {!loading && error && (
+        <div className="mt-6 rounded-2xl bg-red-50 dark:bg-red-900/20 p-6 text-red-700 dark:text-red-300">
+          <p className="font-medium">Error al cargar los reportes</p>
+          <p className="mt-2 text-sm">{error}</p>
+        </div>
+      )}
+
+      {!loading && !error && (
+        <>
+          {/* Filtros */}
       <div className="mt-6 flex flex-wrap gap-2">
         {filtros.map((f) => (
           <button
@@ -358,6 +282,8 @@ export default function Reporte() {
           </tbody>
         </table>
       </div>
+    </>
+  )}
     </div>
   );
 }

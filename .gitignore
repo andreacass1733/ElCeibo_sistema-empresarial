@@ -7,16 +7,55 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Node / React / Vite
 node_modules
 dist
 dist-ssr
 *.local
+
+# Python / Django
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+venv/
+env/
+.venv/
+
+# Variables de entorno
+.env
+.env.*
+!.env.example
+
+# Django
+db.sqlite3
+db.sqlite3-journal
+
+# Archivos estáticos y media generados
+staticfiles/
+media/
+
+# Cache de migraciones
+**/migrations/__pycache__/
+
+# Pruebas y cobertura
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Exportaciones de base de datos
+*.sql
+*.dump
+*.bak
 
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
 .idea
 .DS_Store
+Thumbs.db
+
 *.suo
 *.ntvs*
 *.njsproj

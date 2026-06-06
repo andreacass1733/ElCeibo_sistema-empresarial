@@ -27,13 +27,22 @@ class CapacitacionSerializer(serializers.ModelSerializer):
         ]
 
 
-from .models import Capacitacion, EmpleadoCapacitacion, Empleado, Objetivo, Alerta, Metrica
+from .models import Capacitacion, EmpleadoCapacitacion, Empleado, Objetivo, Alerta, Metrica, Reporte
 
 
 class ObjetivoSerializer(serializers.ModelSerializer):
     class Meta:
         model  = Objetivo
         fields = '__all__'
+
+
+class ReporteSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source='id_reporte')
+    cat = serializers.CharField(source='categoria')
+
+    class Meta:
+        model = Reporte
+        fields = ['id', 'nombre', 'cat', 'fecha', 'estado', 'detalle']
 
 
 class AlertaSerializer(serializers.ModelSerializer):
