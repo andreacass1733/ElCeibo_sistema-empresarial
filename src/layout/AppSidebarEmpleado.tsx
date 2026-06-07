@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Link, useLocation, useParams } from "react-router";
+import { Link, useLocation, useParams, useNavigate } from "react-router";
 
 import {
   GridIcon,
@@ -51,7 +51,7 @@ function getNavItems(id: string, cargo: Cargo): NavItem[] {
       icon: <GridIcon />,
       name: "Mi Dashboard",
       path: `/empleado/${id}`,
-    },    
+    },
     {
       icon: <TaskIcon />,
       name: "Capacitaciones",
@@ -168,6 +168,7 @@ function getNavItems(id: string, cargo: Cargo): NavItem[] {
 const AppSidebarEmpleado: React.FC = () => {
   const { isExpanded, isMobileOpen, isHovered, setIsHovered } = useSidebar();
   const location = useLocation();
+  const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
 
   const [empleado, setEmpleado] = useState<Empleado | null>(null);
@@ -180,7 +181,6 @@ const AppSidebarEmpleado: React.FC = () => {
   useEffect(() => {
     if (!id) return;
     setLoading(true);
-
     fetch(`${import.meta.env.VITE_API_URL ?? "http://localhost:8000/api"}/empleado-actual/${id}/`)
       .then((res) => {
         if (!res.ok) throw new Error("No encontrado");
@@ -205,7 +205,16 @@ const AppSidebarEmpleado: React.FC = () => {
     [location.pathname]
   );
 
+  function handleLogout() {
+    localStorage.removeItem("rol");
+    localStorage.removeItem("usuario");
+    localStorage.removeItem("id_empleado");
+    navigate("/signin", { replace: true });
+  }
+
   const navItems: NavItem[] = empleado ? getNavItems(id!, empleado.cargo) : [];
+
+  const isExpandedOrHovered = isExpanded || isHovered || isMobileOpen;
 
   return (
     <aside
@@ -220,13 +229,9 @@ const AppSidebarEmpleado: React.FC = () => {
       onMouseLeave={() => setIsHovered(false)}
     >
       {/* LOGO */}
-      <div
-        className={`py-8 flex ${
-          !isExpanded && !isHovered ? "lg:justify-center" : "justify-start"
-        }`}
-      >
+      <div className={`py-8 flex ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}>
         <Link to={`/empleado/${id}`}>
-          {isExpanded || isHovered || isMobileOpen ? (
+          {isExpandedOrHovered ? (
             <>
               <img className="dark:hidden" src="/images/logo/logo.svg" alt="Logo" width={150} height={40} />
               <img className="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" width={150} height={40} />
@@ -238,7 +243,7 @@ const AppSidebarEmpleado: React.FC = () => {
       </div>
 
       {/* NOMBRE Y CARGO */}
-      {(isExpanded || isHovered || isMobileOpen) && (
+      {isExpandedOrHovered && (
         <div className="mb-6 px-1">
           {loading ? (
             <div className="h-10 rounded-lg bg-[#6B4226]/30 animate-pulse" />
@@ -251,9 +256,9 @@ const AppSidebarEmpleado: React.FC = () => {
         </div>
       )}
 
-      {/* MENÚ */}
-      <div className="flex flex-col overflow-y-auto duration-300 ease-linear no-scrollbar">
-        <nav className="mb-6">
+      {/* MENÚ — scrollable */}
+      <div className="flex flex-col flex-1 overflow-y-auto overflow-x-hidden duration-300 ease-linear no-scrollbar">
+        <nav className="mb-6 flex-1">
           {loading ? (
             <ul className="flex flex-col gap-4">
               {Array.from({ length: 5 }).map((_, i) => (
@@ -288,7 +293,7 @@ const AppSidebarEmpleado: React.FC = () => {
                       >
                         {nav.icon}
                       </span>
-                      {(isExpanded || isHovered || isMobileOpen) && (
+                      {isExpandedOrHovered && (
                         <span className="menu-item-text">{nav.name}</span>
                       )}
                     </button>
@@ -307,24 +312,19 @@ const AppSidebarEmpleado: React.FC = () => {
                         >
                           {nav.icon}
                         </span>
-                        {(isExpanded || isHovered || isMobileOpen) && (
+                        {isExpandedOrHovered && (
                           <span className="menu-item-text">{nav.name}</span>
                         )}
                       </Link>
                     )
                   )}
 
-                  {nav.subItems && (isExpanded || isHovered || isMobileOpen) && (
+                  {nav.subItems && isExpandedOrHovered && (
                     <div
-                      ref={(el) => {
-                        subMenuRefs.current[index] = el;
-                      }}
+                      ref={(el) => { subMenuRefs.current[index] = el; }}
                       className="overflow-hidden transition-all duration-300"
                       style={{
-                        height:
-                          openSubmenu === index
-                            ? `${subMenuHeight[index]}px`
-                            : "0px",
+                        height: openSubmenu === index ? `${subMenuHeight[index]}px` : "0px",
                       }}
                     >
                       <ul className="mt-2 space-y-1 ml-9">
@@ -350,6 +350,37 @@ const AppSidebarEmpleado: React.FC = () => {
             </ul>
           )}
         </nav>
+
+        {/* CERRAR SESIÓN — pegado al fondo */}
+        <div className="pb-6">
+          <button
+            onClick={handleLogout}
+            className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
+              text-[#F5E6D3]/70 hover:text-[#F5E6D3] hover:bg-[#6B4226]/40
+              dark:text-[#E7C58F]/60 dark:hover:text-[#E7C58F] dark:hover:bg-[#C8A46B]/10
+              transition-colors cursor-pointer
+              ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}
+          >
+            {/* Ícono logout (SVG inline para no depender de imports) */}
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              className="shrink-0"
+            >
+              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+              <polyline points="16 17 21 12 16 7" />
+              <line x1="21" y1="12" x2="9" y2="12" />
+            </svg>
+            {isExpandedOrHovered && <span>Cerrar sesión</span>}
+          </button>
+        </div>
       </div>
     </aside>
   );
