@@ -421,3 +421,102 @@ def dashboard_kpis(request):
         # HISTÓRICO sparkline
         "ventas_mensuales":     ventas_mensuales,
     })
+
+
+@api_view(['GET'])
+def dashboard_kpi_meta(request):
+    with connection.cursor() as cursor:
+        cursor.execute(
+            """
+                SELECT nombre, IFNULL(meta, 0)
+                FROM kpi_meta
+            """
+        )
+        metas = [
+            {"nombre": row[0], "meta": float(row[1])}
+            for row in cursor.fetchall()
+        ]
+
+    return Response(metas)
+
+
+@api_view(['GET'])
+def dashboard_ultimas_ventas(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT v.id_venta, IFNULL(c.nombre, 'Sin cliente'), IFNULL(s.nombre, 'Sin sucursal'),
+                   DATE_FORMAT(v.fecha, '%d %b %Y'), IFNULL(ROUND(SUM(dv.cantidad * dv.precio), 2), 0), v.estado
+            FROM Venta v
+            LEFT JOIN Cliente c ON v.id_cliente = c.id_cliente
+            LEFT JOIN Sucursal s ON v.id_sucursal = s.id_sucursal
+            LEFT JOIN Detalle_Venta dv ON dv.id_venta = v.id_venta
+            GROUP BY v.id_venta, c.nombre, s.nombre, v.fecha, v.estado
+            ORDER BY v.fecha DESC
+            LIMIT 5
+        """)
+        ventas = [
+            {
+                "id": f"V-{row[0]:04d}",
+                "cliente": row[1],
+                "sucursal": row[2],
+                "fecha": row[3],
+                "monto": float(row[4]),
+                "estado": row[5] or "",
+            }
+            for row in cursor.fetchall()
+        ]
+
+    return Response(ventas)
+
+
+@api_view(['GET'])
+def dashboard_produccion_reciente(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT pr.id_produccion, IFNULL(p.nombre, 'Sin producto'), pr.cantidad,
+                   IFNULL(e.nombre, 'Sin empleado'), DATE_FORMAT(pr.fecha, '%d %b %Y')
+            FROM Produccion pr
+            LEFT JOIN Producto p ON pr.id_producto = p.id_producto
+            LEFT JOIN Empleado e ON pr.id_empleado = e.id_empleado
+            ORDER BY pr.fecha DESC
+            LIMIT 5
+        """)
+        items = [
+            {
+                "id": row[0],
+                "producto": row[1],
+                "cantidad": int(row[2] or 0),
+                "empleado": row[3],
+                "fecha": row[4],
+            }
+            for row in cursor.fetchall()
+        ]
+
+    return Response(items)
+
+
+@api_view(['GET'])
+def dashboard_sucursales(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT nombre
+            FROM Sucursal
+            ORDER BY nombre
+        """)
+        sucursales = [row[0] for row in cursor.fetchall()]
+
+    return Response(sucursales)
+
+
+@api_view(['GET'])
+def dashboard_clientes_activos(request):
+    with connection.cursor() as cursor:
+        cursor.execute("""
+            SELECT COUNT(DISTINCT id_cliente)
+            FROM Venta
+            WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+        """)
+        row = cursor.fetchone()
+        clientes_activos = int(row[0]) if row and row[0] is not None else 0
+
+    return Response({"clientes_activos": clientes_activos})

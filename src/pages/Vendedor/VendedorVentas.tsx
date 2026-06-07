@@ -57,13 +57,14 @@ export default function VendedorVentas() {
 
   useEffect(() => {
     cargarVentas();
-    fetch(`${API}/clientes/`)
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setClientes(data); })
-      .catch(console.error);
-    fetch(`${API}/sucursales/`)
-      .then((r) => r.json())
-      .then((data) => { if (Array.isArray(data)) setSucursales(data); })
+    Promise.all([
+      fetch(`${API}/clientes/`).then((r) => r.json()),
+      fetch(`${API}/sucursales/`).then((r) => r.json()),
+    ])
+      .then(([clientes, sucursales]) => {
+        if (Array.isArray(clientes)) setClientes(clientes);
+        if (Array.isArray(sucursales)) setSucursales(sucursales);
+      })
       .catch(console.error);
   }, []);
 

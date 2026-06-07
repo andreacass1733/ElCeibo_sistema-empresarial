@@ -48,8 +48,15 @@ export default function AlmaceneroInventario() {
 
   useEffect(() => {
     cargar();
-    fetch(`${API}/productos/`).then((r) => r.json()).then(setProductos);
-    fetch(`${API}/sucursales/`).then((r) => r.json()).then(setSucursales);
+    Promise.all([
+      fetch(`${API}/productos/`).then((r) => r.json()),
+      fetch(`${API}/sucursales/`).then((r) => r.json()),
+    ])
+      .then(([productos, sucursales]) => {
+        setProductos(productos);
+        setSucursales(sucursales);
+      })
+      .catch(console.error);
   }, []);
 
   const categorias = ["TODOS", ...Array.from(new Set(items.map((i) => i.categoria)))];
