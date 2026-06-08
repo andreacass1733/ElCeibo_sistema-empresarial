@@ -520,3 +520,300 @@ def dashboard_clientes_activos(request):
         clientes_activos = int(row[0]) if row and row[0] is not None else 0
 
     return Response({"clientes_activos": clientes_activos})
+
+
+# ==============================================================================
+# MÓDULO PREDICTIVO ESTRATÉGICO — agregado al final de views.py
+# Usa regresión lineal (sklearn) + reglas IF para proyecciones del próx. periodo
+# Instalar dependencias: pip install scikit-learn numpy
+# ==============================================================================
+
+try:
+    import numpy as np
+    from sklearn.linear_model import LinearRegression
+    SKLEARN_OK = True
+except ImportError:
+    SKLEARN_OK = False
+
+
+def _linear_predict(values: list) -> float:
+    """Predice el siguiente valor usando regresión lineal simple."""
+    n = len(values)
+    if n == 0:
+        return 0.0
+    if n == 1:
+        return values[0]
+    if SKLEARN_OK:
+        X = np.array(range(n)).reshape(-1, 1)
+        y = np.array(values)
+        model = LinearRegression()
+        model.fit(X, y)
+        pred = model.predict([[n]])[0]
+        return max(0.0, float(pred))
+    else:
+        # Fallback sin sklearn: promedio ponderado
+        weights = list(range(1, n + 1))
+        total_w = sum(weights)
+        return sum(v * w for v, w in zip(values, weights)) / total_w
+
+
+def _growth_rate(values: list) -> float:
+    """Tasa de crecimiento promedio entre períodos (%)."""
+    if len(values) < 2:
+        return 0.0
+    rates = []
+    for i in range(1, len(values)):
+        if values[i - 1] > 0:
+            rates.append((values[i] - values[i - 1]) / values[i - 1] * 100)
+    return round(sum(rates) / len(rates), 2) if rates else 0.0
+
+
+def _semaforo(score: float) -> str:
+    if score >= 80:
+        return "optimo"
+    elif score >= 60:
+        return "riesgo"
+    return "critico"
+
+
+def _tendencia(growth: float) -> str:
+    if growth > 5:
+        return "positiva"
+    elif growth < -5:
+        return "negativa"
+    return "estable"
+
+
+@api_view(['GET'])
+def dashboard_predicciones(request):
+    """
+    GET /api/dashboard/predicciones/
+    Devuelve predicciones estratégicas para el próximo periodo.
+    """
+    with connection.cursor() as cursor:
+
+        # ── Historial ventas últimos 6 meses ──────────────────────────────
+        cursor.execute("""
+            SELECT
+                DATE_FORMAT(v.fecha, '%b %Y') AS mes_label,
+                DATE_FORMAT(v.fecha, '%Y-%m') AS mes_key,
+                ROUND(SUM(dv.cantidad * dv.precio), 2) AS total
+            FROM Venta v
+            JOIN Detalle_Venta dv ON dv.id_venta = v.id_venta
+            WHERE v.fecha >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY mes_key, mes_label
+            ORDER BY mes_key
+        """)
+        ventas_rows = cursor.fetchall()
+        ventas_hist  = [float(r[2]) for r in ventas_rows]
+        ventas_labels = [r[0] for r in ventas_rows]
+
+        ventas_pred   = _linear_predict(ventas_hist)
+        ventas_growth = _growth_rate(ventas_hist)
+
+        # ── Historial producción últimos 6 meses ──────────────────────────
+        cursor.execute("""
+            SELECT
+                DATE_FORMAT(fecha, '%b %Y') AS mes_label,
+                DATE_FORMAT(fecha, '%Y-%m') AS mes_key,
+                SUM(cantidad) AS total
+            FROM Produccion
+            WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+            GROUP BY mes_key, mes_label
+            ORDER BY mes_key
+        """)
+        prod_rows   = cursor.fetchall()
+        prod_hist   = [float(r[2]) for r in prod_rows]
+        prod_labels = [r[0] for r in prod_rows]
+
+        prod_pred   = _linear_predict(prod_hist)
+        prod_growth = _growth_rate(prod_hist)
+
+        # ── Inventario + consumo promedio ─────────────────────────────────
+        cursor.execute("SELECT IFNULL(SUM(stock), 0) FROM Inventario")
+        stock_actual = float(cursor.fetchone()[0])
+
+        cursor.execute("""
+            SELECT IFNULL(
+                ROUND(SUM(cantidad) / NULLIF(COUNT(DISTINCT DATE_FORMAT(fecha,'%Y-%m')), 0), 0),
+            0)
+            FROM Produccion
+            WHERE fecha >= DATE_SUB(CURDATE(), INTERVAL 3 MONTH)
+        """)
+        consumo_mensual = float(cursor.fetchone()[0])
+
+        semanas_stock = 0.0
+        if consumo_mensual > 0:
+            semanas_stock = round((stock_actual / consumo_mensual) * 4, 1)
+
+        if semanas_stock >= 4:
+            inv_score = 90.0
+            inv_estado = "Stock suficiente para el próximo periodo"
+        elif semanas_stock >= 2:
+            inv_score = 65.0
+            inv_estado = f"Inventario crítico estimado en {semanas_stock:.0f} semanas"
+        else:
+            inv_score = 35.0
+            inv_estado = "Inventario en nivel crítico · reabastecimiento urgente"
+
+        # ── Capacitaciones ────────────────────────────────────────────────
+        cursor.execute("""
+            SELECT IFNULL(
+                ROUND(SUM(CASE WHEN estado='COMPLETADO' THEN 1 ELSE 0 END)
+                      * 100.0 / NULLIF(COUNT(*), 0), 1), 0)
+            FROM Empleado_Capacitacion
+        """)
+        cap_actual = float(cursor.fetchone()[0])
+
+        cursor.execute("SELECT COUNT(*) FROM Empleado_Capacitacion WHERE estado='INSCRITO'")
+        inscritos = int(cursor.fetchone()[0])
+
+        cursor.execute("SELECT COUNT(*) FROM Empleado_Capacitacion")
+        total_cap = int(cursor.fetchone()[0])
+
+        completados = round(cap_actual * total_cap / 100) if total_cap > 0 else 0
+        cap_pred = round(
+            (completados + inscritos * 0.75) / (total_cap + inscritos) * 100, 1
+        ) if (total_cap + inscritos) > 0 else cap_actual
+        cap_growth = round(cap_pred - cap_actual, 1)
+
+        # ── Empleados / rendimiento ───────────────────────────────────────
+        cursor.execute("SELECT COUNT(*) FROM Empleado")
+        total_emp = int(cursor.fetchone()[0])
+
+        cursor.execute("SELECT IFNULL(ROUND(SUM(cantidad * precio), 2), 0) FROM Detalle_Venta")
+        ingresos_total = float(cursor.fetchone()[0])
+
+        ventas_x_emp = round(ingresos_total / total_emp, 2) if total_emp > 0 else 0.0
+        rend_pred    = round(ventas_pred / total_emp, 2)    if total_emp > 0 else 0.0
+        rend_growth  = _growth_rate([ventas_x_emp, rend_pred]) if ventas_x_emp > 0 else 0.0
+
+    # ── Scores 0–100 por área ────────────────────────────────────────────────
+    ventas_score = max(20.0, min(100.0, 75.0 + ventas_growth))
+    prod_score   = max(20.0, min(100.0, 72.0 + prod_growth))
+    cap_score    = min(100.0, cap_pred)
+    emp_score    = 90.0 if rend_growth > 5 else 75.0 if rend_growth > 0 else 60.0 if rend_growth > -5 else 40.0
+
+    # ── Índice global ponderado ──────────────────────────────────────────────
+    # Ventas 40% | Producción 30% | Inventario 15% | Capacitaciones 10% | RRHH 5%
+    indice_global = round(
+        ventas_score * 0.40 +
+        prod_score   * 0.30 +
+        inv_score    * 0.15 +
+        cap_score    * 0.10 +
+        emp_score    * 0.05,
+        1
+    )
+
+    # ── Alertas predictivas (reglas IF) ─────────────────────────────────────
+    alertas = []
+    if ventas_growth < -5:
+        alertas.append({"tipo": "critico", "area": "Ventas",
+                        "mensaje": "Posible disminución de ventas en el próximo periodo. Se detecta tendencia negativa."})
+    elif ventas_growth < 0:
+        alertas.append({"tipo": "riesgo", "area": "Ventas",
+                        "mensaje": "Leve desaceleración en ventas. Monitorear comportamiento comercial."})
+    if prod_growth < -5:
+        alertas.append({"tipo": "critico", "area": "Producción",
+                        "mensaje": "Producción insuficiente para el siguiente periodo. Revisar órdenes y capacidad."})
+    if semanas_stock < 2:
+        alertas.append({"tipo": "critico", "area": "Inventario",
+                        "mensaje": "Stock proyectado en nivel crítico. Reabastecimiento urgente necesario."})
+    elif semanas_stock < 4:
+        alertas.append({"tipo": "riesgo", "area": "Inventario",
+                        "mensaje": f"Inventario estimado para {semanas_stock:.0f} semanas. Considerar orden de compra."})
+    if cap_pred < 60:
+        alertas.append({"tipo": "riesgo", "area": "Capacitaciones",
+                        "mensaje": "Capacitaciones con bajo impacto proyectado. Reforzar programas de formación."})
+    if rend_growth < -5:
+        alertas.append({"tipo": "riesgo", "area": "Empleados",
+                        "mensaje": "Rendimiento por empleado con tendencia decreciente. Evaluar gestión de equipos."})
+    if not alertas:
+        alertas.append({"tipo": "optimo", "area": "General",
+                        "mensaje": "Todos los indicadores muestran tendencia favorable para el próximo periodo."})
+
+    # ── Recomendaciones (reglas IF) ──────────────────────────────────────────
+    recomendaciones = []
+    if ventas_score < 65:
+        recomendaciones.append("Reforzar estrategias comerciales y revisar política de precios.")
+    if prod_score < 65:
+        recomendaciones.append("Optimizar procesos productivos e identificar cuellos de botella.")
+    if inv_score < 65:
+        recomendaciones.append("Gestionar reabastecimiento de inventario con proveedores clave.")
+    if cap_score < 65:
+        recomendaciones.append("Incrementar capacitaciones en áreas de ventas y producción.")
+    if emp_score < 65:
+        recomendaciones.append("Implementar incentivos de rendimiento para el equipo de ventas.")
+    if not recomendaciones:
+        recomendaciones.append("Mantener el ritmo operativo actual. Todos los indicadores son favorables.")
+
+    # ── Histórico + punto predicho para gráficos ─────────────────────────────
+    tendencias_ventas = [
+        {"mes": l, "valor": round(v, 2), "tipo": "historico"}
+        for l, v in zip(ventas_labels, ventas_hist)
+    ] + [{"mes": "Próx. periodo", "valor": round(ventas_pred, 2), "tipo": "prediccion"}]
+
+    tendencias_prod = [
+        {"mes": l, "valor": int(v), "tipo": "historico"}
+        for l, v in zip(prod_labels, prod_hist)
+    ] + [{"mes": "Próx. periodo", "valor": int(prod_pred), "tipo": "prediccion"}]
+
+    return Response({
+        "ventas": {
+            "valor_predicho": round(ventas_pred, 2),
+            "crecimiento":    ventas_growth,
+            "tendencia":      _tendencia(ventas_growth),
+            "score":          round(ventas_score, 1),
+            "semaforo":       _semaforo(ventas_score),
+            "historico":      [{"mes": l, "valor": v} for l, v in zip(ventas_labels, ventas_hist)],
+        },
+        "produccion": {
+            "valor_predicho": int(prod_pred),
+            "crecimiento":    prod_growth,
+            "tendencia":      _tendencia(prod_growth),
+            "score":          round(prod_score, 1),
+            "semaforo":       _semaforo(prod_score),
+            "historico":      [{"mes": l, "valor": int(v)} for l, v in zip(prod_labels, prod_hist)],
+        },
+        "inventario": {
+            "stock_actual":  int(stock_actual),
+            "semanas_stock": semanas_stock,
+            "estado":        inv_estado,
+            "score":         round(inv_score, 1),
+            "semaforo":      _semaforo(inv_score),
+        },
+        "capacitaciones": {
+            "tasa_actual":   cap_actual,
+            "tasa_predicha": cap_pred,
+            "crecimiento":   cap_growth,
+            "tendencia":     _tendencia(cap_growth),
+            "score":         round(cap_score, 1),
+            "semaforo":      _semaforo(cap_score),
+        },
+        "empleados": {
+            "rendimiento_actual":   ventas_x_emp,
+            "rendimiento_predicho": rend_pred,
+            "crecimiento":          round(rend_growth, 1),
+            "tendencia":            _tendencia(rend_growth),
+            "score":                round(emp_score, 1),
+            "semaforo":             _semaforo(emp_score),
+        },
+        "indice_global": {
+            "valor":    indice_global,
+            "semaforo": _semaforo(indice_global),
+            "pesos":    {"ventas": 40, "produccion": 30, "inventario": 15, "capacitaciones": 10, "empleados": 5},
+            "scores":   {
+                "ventas":         round(ventas_score, 1),
+                "produccion":     round(prod_score, 1),
+                "inventario":     round(inv_score, 1),
+                "capacitaciones": round(cap_score, 1),
+                "empleados":      round(emp_score, 1),
+            },
+        },
+        "alertas":         alertas,
+        "recomendaciones": recomendaciones,
+        "tendencias": {
+            "ventas":     tendencias_ventas,
+            "produccion": tendencias_prod,
+        },
+    })

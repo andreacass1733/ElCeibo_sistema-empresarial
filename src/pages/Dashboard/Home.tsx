@@ -380,20 +380,20 @@ export default function Home() {
 
           {/* ── GRÁFICO VENTAS ── */}
           {/* ── OBJETIVOS ── */}
-          <Card className="col-span-12 xl:col-span-4">
+          <Card className="col-span-12 xl:col-span-6">
             <h3 className="mb-6 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Objetivos Estratégicos</h3>
             <Objetivos data={objetivosState} />
           </Card>
 
           {/* ── KPI PERSPECTIVAS ── */}
-          <Card className="col-span-12 xl:col-span-5">
-            <h3 className="mb-5 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Indicadores KPI</h3>
+          <Card className="col-span-12 xl:col-span-6 flex flex-col">
+            <h3 className="mb-6 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Perspectivas Estratégicas - Cuadro de Mando Integrado</h3>
             <p className="mb-5 text-sm text-[#7A5C46] dark:text-[#B89B84]">Evaluación por perspectivas estratégicas.</p>
             <KpiPerspectivas data={kpiPerspectivasState} />
           </Card>
 
           {/* ── EMBED LOOKER / Data Studio ── */}
-          <Card className="col-span-12 xl:col-span-7">
+          <Card className="col-span-12 xl:col-span-12">
             <h3 className="mb-4 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Panel externo (Looker / Data Studio)</h3>
             <p className="mb-3 text-sm text-[#7A5C46] dark:text-[#B89B84]">Informe embebido desde Looker / Google Data Studio.</p>
             <div className="w-full">

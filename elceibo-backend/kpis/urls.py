@@ -6,6 +6,7 @@ from .views import (
     dashboard_produccion_reciente,
     dashboard_sucursales,
     dashboard_clientes_activos,
+    dashboard_predicciones
 )
 
 urlpatterns = [
@@ -15,4 +16,5 @@ urlpatterns = [
     path('dashboard/produccion-reciente/', dashboard_produccion_reciente),
     path('dashboard/sucursales/', dashboard_sucursales),
     path('dashboard/clientes-activos/', dashboard_clientes_activos),
+    path('dashboard/predicciones/', dashboard_predicciones),
 ]
