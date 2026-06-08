@@ -31,12 +31,65 @@ import EmpleadoReportes from "./pages/Empleado/EmpleadoReportes";
 import EmpleadoConstancias from "./pages/Empleado/EmpleadoConstancias";
 
 /* =========================
-   ROLES ESPECÍFICOS
+   VENDEDOR
 ========================= */
-import CajeroHome from "./pages/Cajero/CajeroHome";
-import AlmaceneroHome from "./pages/Almacenero/AlmaceneroHome";
-import ProduccionHome from "./pages/Produccion/ProduccionHome";
-import VendedorHome from "./pages/Vendedor/VendedorHome";
+import VendedorVentas from "./pages/Vendedor/VendedorVentas";
+import VendedorClientes from "./pages/Vendedor/VendedorClientes";
+import VendedorCotizaciones from "./pages/Vendedor/VendedorCotizaciones";
+
+/* =========================
+   CAJERO
+========================= */
+import CajeroCaja from "./pages/Cajero/CajeroCaja";
+import CajeroCobros from "./pages/Cajero/CajeroCobros";
+import CajeroTransacciones from "./pages/Cajero/CajeroTransacciones";
+
+/* =========================
+   ALMACENERO
+========================= */
+import AlmaceneroInventario from "./pages/Almacenero/AlmaceneroInventario";
+import AlmaceneroStock from "./pages/Almacenero/AlmaceneroStock";
+import AlmaceneroEntradas from "./pages/Almacenero/AlmaceneroEntradas";
+import AlmaceneroSalidas from "./pages/Almacenero/AlmaceneroSalida";
+
+/* =========================
+   PRODUCCION
+========================= */
+import ProduccionProduccion from "./pages/Produccion/ProduccionProduccion";
+import ProduccionOrdenes from "./pages/Produccion/ProduccionOrdenes";
+import ProduccionControl from "./pages/Produccion/ProduccionControl";
+
+/* =========================
+   REPARTIDOR
+========================= */
+import RepartidorRutas from "./pages/Repartidor/RepartidorRutas";
+import RepartidorEntregas from "./pages/Repartidor/RepartidorEntregas";
+
+/* =========================
+   OPERARIO
+========================= */
+import OperarioTareas from "./pages/Operario/OperarioTareas";
+import OperarioActividades from "./pages/Operario/OperarioActividades";
+
+/* =========================
+   SUPERVISOR
+========================= */
+import SupervisorPersonal from "./pages/Supervisor/SupervisorPersonal";
+import SupervisorEvaluaciones from "./pages/Supervisor/SupervisorEvaluaciones";
+import SupervisorIncidencias from "./pages/Supervisor/SupervisorIncidencias";
+
+/* =========================
+   TODOS LOS ROLES DE EMPLEADO
+========================= */
+const ROLES_EMPLEADO = [
+  "Produccion",
+  "Almacenero",
+  "Vendedor",
+  "Cajero",
+  "Repartidor",
+  "Operario",
+  "Supervisor",
+];
 
 /* =========================
    GUARD DE RUTAS
@@ -46,6 +99,16 @@ function PrivateRoute({ rolesPermitidos }: { rolesPermitidos: string[] }) {
   if (!rol) return <Navigate to="/signin" replace />;
   if (!rolesPermitidos.includes(rol)) return <Navigate to="/signin" replace />;
   return <Outlet />;
+}
+
+/* =========================
+   REDIRECT EMPLEADO
+   Lee el id guardado en localStorage y redirige a /empleado/:id
+========================= */
+function EmpleadoRedirect() {
+  const id = localStorage.getItem("id_empleado");
+  if (!id) return <Navigate to="/signin" replace />;
+  return <Navigate to={`/empleado/${id}`} replace />;
 }
 
 export default function App() {
@@ -81,47 +144,73 @@ export default function App() {
         </Route>
 
         {/* =========================================
-            EMPLEADO (rutas compartidas)
+            TODOS LOS EMPLEADOS
         ========================================= */}
-        <Route element={<PrivateRoute rolesPermitidos={["Produccion", "Almacenero", "Vendedor", "Cajero"]} />}>
+        <Route element={<PrivateRoute rolesPermitidos={ROLES_EMPLEADO} />}>
           <Route element={<AppLayoutEmpleado />}>
-            <Route path="/empleado" element={<EmpleadoHome />} />
-            <Route path="/empleado/perfil" element={<EmpleadoPerfil />} />
-            <Route path="/empleado/capacitaciones" element={<EmpleadoCapacitaciones />} />
-            <Route path="/empleado/capacitaciones/historial" element={<EmpleadoHistorial />} />
-            <Route path="/empleado/desempeno" element={<EmpleadoDesempeno />} />
-            <Route path="/empleado/objetivos" element={<EmpleadoObjetivos />} />
-            <Route path="/empleado/reportes" element={<EmpleadoReportes />} />
-            <Route path="/empleado/constancias" element={<EmpleadoConstancias />} />
+
+            {/* Redirect /empleado → /empleado/:id */}
+            <Route path="/empleado" element={<EmpleadoRedirect />} />
+
+            {/* ── COMUNES A TODOS ── */}
+            <Route path="/empleado/:id"                          element={<EmpleadoHome />} />
+            <Route path="/empleado/:id/perfil"                   element={<EmpleadoPerfil />} />
+            <Route path="/empleado/:id/capacitaciones"           element={<EmpleadoCapacitaciones />} />
+            <Route path="/empleado/:id/capacitaciones/historial" element={<EmpleadoHistorial />} />
+            <Route path="/empleado/:id/desempeno"                element={<EmpleadoDesempeno />} />
+            <Route path="/empleado/:id/objetivos"                element={<EmpleadoObjetivos />} />
+            <Route path="/empleado/:id/reportes"                 element={<EmpleadoReportes />} />
+            <Route path="/empleado/:id/constancias"              element={<EmpleadoConstancias />} />
+
+            {/* ── VENDEDOR ── */}
+            <Route element={<PrivateRoute rolesPermitidos={["Vendedor"]} />}>
+              <Route path="/empleado/:id/ventas"       element={<VendedorVentas />} />
+              <Route path="/empleado/:id/clientes"     element={<VendedorClientes />} />
+              <Route path="/empleado/:id/cotizaciones" element={<VendedorCotizaciones />} />
+            </Route>
+
+            {/* ── CAJERO ── */}
+            <Route element={<PrivateRoute rolesPermitidos={["Cajero"]} />}>
+              <Route path="/empleado/:id/caja"         element={<CajeroCaja />} />
+              <Route path="/empleado/:id/cobros"       element={<CajeroCobros />} />
+              <Route path="/empleado/:id/transacciones" element={<CajeroTransacciones />} />
+            </Route>
+
+            {/* ── ALMACENERO ── */}
+            <Route element={<PrivateRoute rolesPermitidos={["Almacenero"]} />}>
+              <Route path="/empleado/:id/inventario" element={<AlmaceneroInventario />} />
+              <Route path="/empleado/:id/stock"      element={<AlmaceneroStock />} />
+              <Route path="/empleado/:id/entradas"   element={<AlmaceneroEntradas />} />
+              <Route path="/empleado/:id/salidas"    element={<AlmaceneroSalidas />} />
+            </Route>
+
+            {/* ── PRODUCCION ── */}
+            <Route element={<PrivateRoute rolesPermitidos={["Produccion"]} />}>
+              <Route path="/empleado/:id/produccion" element={<ProduccionProduccion />} />
+              <Route path="/empleado/:id/ordenes"    element={<ProduccionOrdenes />} />
+              <Route path="/empleado/:id/control"    element={<ProduccionControl />} />
+            </Route>
+
+            {/* ── REPARTIDOR ── */}
+            <Route element={<PrivateRoute rolesPermitidos={["Repartidor"]} />}>
+              <Route path="/empleado/:id/rutas"    element={<RepartidorRutas />} />
+              <Route path="/empleado/:id/entregas" element={<RepartidorEntregas />} />
+            </Route>
+
+            {/* ── OPERARIO ── */}
+            <Route element={<PrivateRoute rolesPermitidos={["Operario"]} />}>
+              <Route path="/empleado/:id/tareas"      element={<OperarioTareas />} />
+              <Route path="/empleado/:id/actividades" element={<OperarioActividades />} />
+            </Route>
+
+            {/* ── SUPERVISOR ── */}
+            <Route element={<PrivateRoute rolesPermitidos={["Supervisor"]} />}>
+              <Route path="/empleado/:id/personal"     element={<SupervisorPersonal />} />
+              <Route path="/empleado/:id/evaluaciones" element={<SupervisorEvaluaciones />} />
+              <Route path="/empleado/:id/incidencias"  element={<SupervisorIncidencias />} />
+            </Route>
+
           </Route>
-        </Route>
-
-        {/* =========================================
-            CAJERO
-        ========================================= */}
-        <Route element={<PrivateRoute rolesPermitidos={["Cajero"]} />}>
-          <Route path="/cajero" element={<CajeroHome />} />
-        </Route>
-
-        {/* =========================================
-            ALMACENERO
-        ========================================= */}
-        <Route element={<PrivateRoute rolesPermitidos={["Almacenero"]} />}>
-          <Route path="/almacenero" element={<AlmaceneroHome />} />
-        </Route>
-
-        {/* =========================================
-            PRODUCCION
-        ========================================= */}
-        <Route element={<PrivateRoute rolesPermitidos={["Produccion"]} />}>
-          <Route path="/produccion" element={<ProduccionHome />} />
-        </Route>
-
-        {/* =========================================
-            VENDEDOR
-        ========================================= */}
-        <Route element={<PrivateRoute rolesPermitidos={["Vendedor"]} />}>
-          <Route path="/vendedor" element={<VendedorHome />} />
         </Route>
 
         {/* =========================================

@@ -89,9 +89,12 @@ DATABASES = {
         'PASSWORD': 'z6zlPOe3VZrhuP4feH3K',
         'HOST':   'b9pr3ulethdqu1vh0wok-mysql.services.clever-cloud.com',
         'PORT':   '3306',
+        'CONN_MAX_AGE': 300,  # ← Reutiliza conexiones por 5 minutos (conservador)
+        'AUTOCOMMIT': True,   # ← Evita transacciones innecesarias
         'OPTIONS': {
             'charset': 'utf8mb4',
             'init_command': "SET sql_mode='STRICT_TRANS_TABLES'",
+            'connect_timeout': 10,
         },
     }
 }

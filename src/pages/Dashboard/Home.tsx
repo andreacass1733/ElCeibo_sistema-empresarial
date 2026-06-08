@@ -1,54 +1,45 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import PageMeta from "../../components/common/PageMeta";
+import {
+  getKpiMeta,
+  getDashboardKpis,
+  getObjetivos,
+  getSucursales,
+  getClientesActivos,
+  type DashboardKpisResponse,
+} from "../../services/gestionEmpresarial";
+import { getCapacitaciones } from "../../services/capacitaciones";
 
 // ─── tipos ───────────────────────────────────────────────
 type AlertaTipo = "warning" | "danger" | "info" | "success";
 
+type KpiPerspectiva = {
+  label: string;
+  valor: number;
+  color: string;
+  displayValue: string;
+};
+
+type CapacitacionUI = {
+  nombre: string;
+  progreso: number;
+  estado: "Completado" | "En curso" | "Pendiente";
+};
+
+type ObjetivoUI = {
+  label: string;
+  pct: number;
+};
+
 // ─── datos simulados ──────────────────────────────────────
-const ventasMensuales = [
-  { mes: "Ene", valor: 18200 },
-  { mes: "Feb", valor: 21400 },
-  { mes: "Mar", valor: 19800 },
-  { mes: "Abr", valor: 23100 },
-  { mes: "May", valor: 25430 },
-  { mes: "Jun", valor: 22600 },
-  { mes: "Jul", valor: 27800 },
-  { mes: "Ago", valor: 24300 },
-  { mes: "Sep", valor: 26100 },
-  { mes: "Oct", valor: 28400 },
-  { mes: "Nov", valor: 30200 },
-  { mes: "Dic", valor: 32500 },
-];
 
-const kpiPerspectivas = [
-  { label: "Financiero", valor: 88, color: "#c8804a" },
-  { label: "Clientes", valor: 74, color: "#d4a056" },
-  { label: "Procesos", valor: 91, color: "#b8845e" },
-  { label: "Aprendizaje", valor: 65, color: "#e0a060" },
-];
-
-const ultimasVentas = [
-  { id: "V-0041", cliente: "Mercado Central", sucursal: "Central", monto: 4820, fecha: "28/05/2026", estado: "completado" },
-  { id: "V-0040", cliente: "Supermercados Norte", sucursal: "Norte", monto: 6340, fecha: "27/05/2026", estado: "completado" },
-  { id: "V-0039", cliente: "Tienda El Cacao", sucursal: "Sur", monto: 2110, fecha: "27/05/2026", estado: "pendiente" },
-  { id: "V-0038", cliente: "Hotel Camino Real", sucursal: "Central", monto: 8900, fecha: "26/05/2026", estado: "completado" },
-  { id: "V-0037", cliente: "Distribuidora Andes", sucursal: "Norte", monto: 3200, fecha: "25/05/2026", estado: "cancelado" },
-];
-
-const produccionReciente = [
-  { producto: "Tableta 70%", cantidad: 800, empleado: "María Ticona", fecha: "28/05/2026" },
-  { producto: "Trufa maracuyá", cantidad: 640, empleado: "Pedro Condori", fecha: "27/05/2026" },
-  { producto: "Bombón relleno", cantidad: 520, empleado: "Juan Mamani", fecha: "26/05/2026" },
-  { producto: "Chocolate blanco", cantidad: 880, empleado: "Ana Quispe", fecha: "25/05/2026" },
-];
-
-const capacitaciones = [
-  { nombre: "Manipulación de chocolate", progreso: 100, estado: "Completado" },
-  { nombre: "Atención al cliente", progreso: 100, estado: "Completado" },
-  { nombre: "Seguridad alimentaria", progreso: 60, estado: "En curso" },
-  { nombre: "Control de calidad", progreso: 40, estado: "En curso" },
+const kpiPerspectivas: KpiPerspectiva[] = [
+  { label: "Financiero", valor: 88, color: "#c8804a", displayValue: "88%" },
+  { label: "Clientes", valor: 74, color: "#d4a056", displayValue: "74%" },
+  { label: "Procesos", valor: 91, color: "#b8845e", displayValue: "91%" },
+  { label: "Aprendizaje", valor: 65, color: "#e0a060", displayValue: "65%" },
 ];
 
 const alertas: { tipo: AlertaTipo; titulo: string; desc: string }[] = [
@@ -60,8 +51,6 @@ const alertas: { tipo: AlertaTipo; titulo: string; desc: string }[] = [
 ];
 
 // ─── helpers ─────────────────────────────────────────────
-const maxVenta = Math.max(...ventasMensuales.map((v) => v.valor));
-
 function estadoChip(estado: string) {
   const map: Record<string, string> = {
     completado: "bg-emerald-950 text-emerald-400 dark:bg-emerald-950 dark:text-emerald-400",
@@ -128,57 +117,21 @@ function KpiCard({ label, value, sub, subColor, icon }: {
 }
 
 // ─── Gráfico de barras simple ─────────────────────────────
-function BarChart() {
-  const [hovered, setHovered] = useState<number | null>(null);
-  return (
-    <div className="flex items-end gap-1.5 h-48 w-full">
-      {ventasMensuales.map((v, i) => {
-        const pct = (v.valor / maxVenta) * 100;
-        const isHov = hovered === i;
-        return (
-          <div
-            key={i}
-            className="flex flex-col items-center flex-1 gap-1 cursor-pointer group"
-            onMouseEnter={() => setHovered(i)}
-            onMouseLeave={() => setHovered(null)}
-          >
-            {isHov && (
-              <span className="text-xs font-medium text-[#8B5E3C] dark:text-[#f5c16c] whitespace-nowrap">
-                Bs {v.valor.toLocaleString()}
-              </span>
-            )}
-            <div
-              className="w-full rounded-t-lg transition-all duration-200"
-              style={{
-                height: `${pct}%`,
-                background: isHov
-                  ? "linear-gradient(to top, #8B5E3C, #c8904a)"
-                  : "linear-gradient(to top, #5C3B1E, #8B5E3C)",
-                opacity: hovered !== null && !isHov ? 0.5 : 1,
-              }}
-            />
-            <span className="text-[10px] text-[#8B6A53] dark:text-[#9a6840]">{v.mes}</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
 // ─── Radar/Barras horizontales KPI ───────────────────────
-function KpiPerspectivas() {
+function KpiPerspectivas({ data }: { data: KpiPerspectiva[] }) {
+  const maxValor = Math.max(...data.map((k) => k.valor), 1);
   return (
     <div className="space-y-4">
-      {kpiPerspectivas.map((k) => (
+      {data.map((k) => (
         <div key={k.label}>
           <div className="mb-1.5 flex justify-between items-center">
             <span className="text-sm text-[#6E4E37] dark:text-[#D1B095]">{k.label}</span>
-            <span className="text-sm font-semibold text-[#8B5E3C] dark:text-[#E7C9A9]">{k.valor}%</span>
+            <span className="text-sm font-semibold text-[#8B5E3C] dark:text-[#E7C9A9]">{k.displayValue}</span>
           </div>
           <div className="h-2.5 rounded-full bg-[#dbc7b4] dark:bg-[#3a2a20]">
             <div
               className="h-2.5 rounded-full transition-all duration-700"
-              style={{ width: `${k.valor}%`, backgroundColor: k.color }}
+              style={{ width: `${Math.min((k.valor / maxValor) * 100, 100)}%`, backgroundColor: k.color }}
             />
           </div>
         </div>
@@ -188,17 +141,10 @@ function KpiPerspectivas() {
 }
 
 // ─── Objetivos estratégicos ───────────────────────────────
-const objetivos = [
-  { label: "Incrementar Ventas", pct: 90 },
-  { label: "Mejorar Producción", pct: 78 },
-  { label: "Capacitación",       pct: 65 },
-  { label: "Retención Clientes", pct: 83 },
-];
-
-function Objetivos() {
+function Objetivos({ data }: { data: ObjetivoUI[] }) {
   return (
     <div className="space-y-5">
-      {objetivos.map((o) => (
+      {data.map((o) => (
         <div key={o.label}>
           <div className="mb-2 flex items-center justify-between">
             <span className="text-sm text-[#6E4E37] dark:text-[#D1B095]">{o.label}</span>
@@ -213,67 +159,11 @@ function Objetivos() {
   );
 }
 
-// ─── Tabla últimas ventas ─────────────────────────────────
-function TablaVentas() {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[#d8c2ac] dark:border-[#3a2a20]">
-            {["ID", "Cliente", "Sucursal", "Monto", "Fecha", "Estado"].map((h) => (
-              <th key={h} className="pb-3 text-left font-medium text-[#8B6A53] dark:text-[#C7A98A]">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {ultimasVentas.map((v, i) => (
-            <tr key={i} className="border-b border-[#ede0d4] dark:border-[#2a1e14] last:border-0 hover:bg-[#f0e6dc] dark:hover:bg-[#2a1810] transition-colors">
-              <td className="py-3 font-mono text-xs text-[#8B5E3C] dark:text-[#c8904a]">{v.id}</td>
-              <td className="py-3 text-[#4B2E1E] dark:text-[#E7C9A9]">{v.cliente}</td>
-              <td className="py-3 text-[#7A5C46] dark:text-[#B89B84]">{v.sucursal}</td>
-              <td className="py-3 font-semibold text-[#5C3B1E] dark:text-[#F0C9A4]">Bs {v.monto.toLocaleString()}</td>
-              <td className="py-3 text-[#7A5C46] dark:text-[#B89B84]">{v.fecha}</td>
-              <td className="py-3">{estadoChip(v.estado)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
-// ─── Tabla producción reciente ────────────────────────────
-function TablaProduccion() {
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead>
-          <tr className="border-b border-[#d8c2ac] dark:border-[#3a2a20]">
-            {["Producto", "Unidades", "Responsable", "Fecha"].map((h) => (
-              <th key={h} className="pb-3 text-left font-medium text-[#8B6A53] dark:text-[#C7A98A]">{h}</th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {produccionReciente.map((p, i) => (
-            <tr key={i} className="border-b border-[#ede0d4] dark:border-[#2a1e14] last:border-0 hover:bg-[#f0e6dc] dark:hover:bg-[#2a1810] transition-colors">
-              <td className="py-3 text-[#4B2E1E] dark:text-[#E7C9A9]">{p.producto}</td>
-              <td className="py-3 font-semibold text-[#5C3B1E] dark:text-[#F0C9A4]">{p.cantidad}</td>
-              <td className="py-3 text-[#7A5C46] dark:text-[#B89B84]">{p.empleado}</td>
-              <td className="py-3 text-[#7A5C46] dark:text-[#B89B84]">{p.fecha}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
-  );
-}
-
 // ─── Capacitaciones ───────────────────────────────────────
-function Capacitaciones() {
+function Capacitaciones({ data }: { data: CapacitacionUI[] }) {
   return (
     <div className="space-y-4">
-      {capacitaciones.map((c, i) => (
+      {data.map((c, i) => (
         <div key={i}>
           <div className="mb-1.5 flex items-center justify-between">
             <span className="text-sm text-[#6E4E37] dark:text-[#D1B095] truncate pr-2">{c.nombre}</span>
@@ -335,6 +225,115 @@ function Alertas() {
 
 // ─── Dashboard principal ──────────────────────────────────
 export default function Home() {
+  const [kpiPerspectivasState, setKpiPerspectivasState] = useState<KpiPerspectiva[]>(kpiPerspectivas);
+  const [dashboardStats, setDashboardStats] = useState<DashboardKpisResponse | null>(null);
+  const [capacitacionesState, setCapacitacionesState] = useState<CapacitacionUI[]>([]);
+  const [objetivosState, setObjetivosState] = useState<ObjetivoUI[]>([]);
+  const [sucursalesState, setSucursalesState] = useState<string[]>([]);
+  const [clientesActivosState, setClientesActivosState] = useState<number | null>(null);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function loadDashboardData() {
+      try {
+        // ─── PRIMERA ONDA: datos críticos del dashboard (3 en paralelo) ───
+        const [metaData, kpis, capacitacionesData] = await Promise.all([
+          getKpiMeta(),
+          getDashboardKpis(),
+          getCapacitaciones(),
+        ]);
+
+        setKpiPerspectivasState(
+          metaData.map((item) => {
+            const label = item.nombre
+              .replace(/^[a-z]/, (ch) => ch.toUpperCase());
+            const displayValue = item.meta.toLocaleString("es-BO");
+            const color =
+              label === "Financiero"
+                ? "#c8804a"
+                : label === "Clientes"
+                ? "#d4a056"
+                : label === "Procesos"
+                ? "#b8845e"
+                : "#e0a060";
+            return {
+              label,
+              valor: item.meta,
+              color,
+              displayValue,
+            };
+          })
+        );
+
+        setDashboardStats(kpis);
+
+        // Transformar capacitaciones del backend al formato UI
+        const capacitacionesTransformadas: CapacitacionUI[] = capacitacionesData.map((cap) => {
+          const empleados = cap.empleados || [];
+          const completados = empleados.filter((e) => e.estado === "COMPLETADO").length;
+          const progreso = empleados.length > 0 ? Math.round((completados / empleados.length) * 100) : 0;
+          
+          let estado: "Completado" | "En curso" | "Pendiente" = "Pendiente";
+          if (progreso === 100) {
+            estado = "Completado";
+          } else if (progreso > 0) {
+            estado = "En curso";
+          }
+
+          return {
+            nombre: cap.nombre,
+            progreso,
+            estado,
+          };
+        });
+
+        setCapacitacionesState(capacitacionesTransformadas);
+
+        // ─── SEGUNDA ONDA: datos complementarios (después de esperar la primera) ───
+        try {
+          const [objetivosData, sucursales, clientesActivos] = await Promise.all([
+            getObjetivos(),
+            getSucursales(),
+            getClientesActivos(),
+          ]);
+
+          // Transformar objetivos del backend al formato UI
+          const objetivosTransformados: ObjetivoUI[] = objetivosData.map((obj) => ({
+            label: obj.titulo,
+            pct: obj.progreso,
+          }));
+
+          setObjetivosState(objetivosTransformados);
+          setSucursalesState(sucursales);
+          setClientesActivosState(clientesActivos.clientes_activos);
+        } catch (e) {
+          // non-fatal: keep dashboard loading
+          console.warn('No se pudieron cargar datos complementarios', e);
+        }
+      } catch (error) {
+        setDashboardError(
+          error instanceof Error ? error.message : "Error al cargar datos del dashboard"
+        );
+      }
+    }
+
+    loadDashboardData();
+  }, []);
+
+  function formatCurrency(value: number) {
+    return `Bs ${value.toLocaleString("es-BO")}`;
+  }
+
+  const ventasTotalesValue = dashboardStats ? formatCurrency(dashboardStats.ingresos) : "Bs 25,430";
+  const produccionValue = dashboardStats ? `${dashboardStats.produccion} u.` : "2,840 u.";
+  const inventarioValue = dashboardStats ? `${dashboardStats.stock} u.` : "4,210 u.";
+  const empleadosValue = dashboardStats ? `${dashboardStats.empleados}` : "12";
+  const kpiCumplidosValue = dashboardStats ? `${dashboardStats.capacitaciones}%` : "82%";
+  const comprasQ2Value = dashboardStats ? formatCurrency(dashboardStats.gasto_compras) : "Bs 28,400";
+  const sucursalesValue = dashboardStats ? `${dashboardStats.sucursales_abastecidas}` : (sucursalesState.length ? `${sucursalesState.length}` : "3");
+  const sucursalesSub = sucursalesState.length ? sucursalesState.join(", ") : "Central, Norte, Sur";
+  const clientesActivosValue = clientesActivosState !== null ? `${clientesActivosState}` : (dashboardStats ? `${dashboardStats.ventas_registradas}` : "48");
+
   return (
     <>
       <PageMeta
@@ -359,41 +358,38 @@ export default function Home() {
             <p className="text-sm font-medium text-[#5C3B1E] dark:text-[#F0C9A4]">28/05/2026 — 09:45</p>
           </div>
         </div>
+        {dashboardError && (
+          <div className="mb-6 rounded-3xl border border-red-200 bg-red-50 p-4 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/20 dark:text-red-300">
+            Error al cargar datos del backend: {dashboardError}
+          </div>
+        )}
 
         <div className="grid grid-cols-12 gap-5">
 
           {/* ── KPI CARDS ── */}
-          <KpiCard label="Ventas Totales"  value="Bs 25,430" sub="+12% respecto al mes anterior" subColor="text-green-700 dark:text-green-400"  icon="💰" />
-          <KpiCard label="Producción"      value="2,840 u."  sub="85% cumplimiento mensual"       subColor="text-blue-700 dark:text-blue-400"   icon="🏭" />
-          <KpiCard label="Inventario"      value="4,210 u."  sub="1 producto en estado crítico"   subColor="text-red-700 dark:text-red-400"     icon="📦" />
-          <KpiCard label="Empleados"       value="12"        sub="3 cargos · 87% capacitados"     subColor="text-amber-700 dark:text-amber-400" icon="👥" />
+          <KpiCard label="Ventas Totales"  value={ventasTotalesValue}  sub="+12% respecto al mes anterior" subColor="text-green-700 dark:text-green-400"  icon="💰" />
+          <KpiCard label="Producción"      value={produccionValue}      sub="85% cumplimiento mensual"       subColor="text-blue-700 dark:text-blue-400"   icon="🏭" />
+          <KpiCard label="Inventario"      value={inventarioValue}      sub="1 producto en estado crítico"   subColor="text-red-700 dark:text-red-400"     icon="📦" />
+          <KpiCard label="Empleados"       value={empleadosValue}       sub="3 cargos · 87% capacitados"     subColor="text-amber-700 dark:text-amber-400" icon="👥" />
 
           {/* segunda fila KPI */}
-          <KpiCard label="KPI Cumplidos"   value="82%"       sub="Rendimiento óptimo"             subColor="text-green-700 dark:text-green-400"  icon="🎯" />
-          <KpiCard label="Compras Q2"      value="Bs 28,400" sub="5 proveedores · 8 órdenes"      subColor="text-[#8B5E3C] dark:text-[#c8904a]" icon="🛒" />
-          <KpiCard label="Sucursales"      value="3"         sub="Central, Norte, Sur"            subColor="text-blue-700 dark:text-blue-400"   icon="🏪" />
-          <KpiCard label="Clientes activos" value="48"       sub="+6 nuevos este mes"             subColor="text-green-700 dark:text-green-400"  icon="🤝" />
+          <KpiCard label="KPI Cumplidos"   value={kpiCumplidosValue}   sub="Rendimiento óptimo"             subColor="text-green-700 dark:text-green-400"  icon="🎯" />
+          <KpiCard label="Compras Q2"      value={comprasQ2Value}      sub="5 proveedores · 8 órdenes"      subColor="text-[#8B5E3C] dark:text-[#c8904a]" icon="🛒" />
+          <KpiCard label="Sucursales"      value={sucursalesValue}      sub={sucursalesSub}            subColor="text-blue-700 dark:text-blue-400"   icon="🏪" />
+          <KpiCard label="Clientes activos" value={clientesActivosValue} sub="+6 nuevos este mes"             subColor="text-green-700 dark:text-green-400"  icon="🤝" />
 
           {/* ── GRÁFICO VENTAS ── */}
-          <Card className="col-span-12 xl:col-span-8">
-            <div className="mb-5">
-              <h3 className="text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Ventas Mensuales</h3>
-              <p className="mt-1 text-sm text-[#7A5C46] dark:text-[#B89B84]">Seguimiento del rendimiento comercial 2026.</p>
-            </div>
-            <BarChart />
-          </Card>
-
           {/* ── OBJETIVOS ── */}
           <Card className="col-span-12 xl:col-span-4">
             <h3 className="mb-6 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Objetivos Estratégicos</h3>
-            <Objetivos />
+            <Objetivos data={objetivosState} />
           </Card>
 
           {/* ── KPI PERSPECTIVAS ── */}
           <Card className="col-span-12 xl:col-span-5">
             <h3 className="mb-5 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Indicadores KPI</h3>
             <p className="mb-5 text-sm text-[#7A5C46] dark:text-[#B89B84]">Evaluación por perspectivas estratégicas.</p>
-            <KpiPerspectivas />
+            <KpiPerspectivas data={kpiPerspectivasState} />
           </Card>
 
           {/* ── EMBED LOOKER / Data Studio ── */}
@@ -404,7 +400,9 @@ export default function Home() {
               <div className="relative w-full pb-[75%] rounded-lg overflow-hidden border border-stone-200 dark:border-[#3a2a20]">
                 <iframe
                   title="Looker Studio Report"
-                  src="https://datastudio.google.com/embed/reporting/54f7277e-8b49-490a-8c37-48e88d155fa8/page/VoS0F"
+                  width="600"
+                  height="450"
+                  src="https://datastudio.google.com/embed/reporting/0793bc4e-523b-474f-ab29-3ce42e9b35f8/page/pBY0F"
                   className="absolute inset-0 w-full h-full"
                   frameBorder={0}
                   style={{ border: 0 }}
@@ -418,25 +416,13 @@ export default function Home() {
           {/* ── CAPACITACIONES ── */}
           <Card className="col-span-12 xl:col-span-7">
             <h3 className="mb-5 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Progreso de Capacitaciones</h3>
-            <Capacitaciones />
+            <Capacitaciones data={capacitacionesState} />
           </Card>
 
           {/* ── ALERTAS ── */}
           <Card className="col-span-12 xl:col-span-5">
             <h3 className="mb-5 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Alertas Estratégicas</h3>
             <Alertas />
-          </Card>
-
-          {/* ── ÚLTIMAS VENTAS ── */}
-          <Card className="col-span-12 xl:col-span-7">
-            <h3 className="mb-5 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Últimas Ventas</h3>
-            <TablaVentas />
-          </Card>
-
-          {/* ── PRODUCCIÓN RECIENTE ── */}
-          <Card className="col-span-12">
-            <h3 className="mb-5 text-xl font-semibold text-[#4B2E1E] dark:text-[#E7C9A9]">Producción Reciente</h3>
-            <TablaProduccion />
           </Card>
 
         </div>

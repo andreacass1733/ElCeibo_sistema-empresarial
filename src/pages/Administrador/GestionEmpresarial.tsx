@@ -158,14 +158,28 @@ export default function GestionEmpresarial() {
   const [filtroArea,   setFiltroArea]   = useState<string>("Todas");
 
   useEffect(() => {
-    Promise.all([getObjetivos(), getAlertas(), getMetricas()])
-      .then(([obj, ale, met]) => {
+    async function loadData() {
+      try {
+        // ─── ONDA 1: Objetivos y Alertas (2 en paralelo) ───
+        const [obj, ale] = await Promise.all([
+          getObjetivos(),
+          getAlertas(),
+        ]);
+
         setObjetivos(obj);
         setAlertas(ale);
+
+        // ─── ONDA 2: Métricas (serial, después de la primera onda) ───
+        const met = await getMetricas();
         setMetricas(met);
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error al cargar datos");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
   }, []);
 
   if (loading)
