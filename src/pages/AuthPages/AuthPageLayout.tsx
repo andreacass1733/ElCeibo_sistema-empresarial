@@ -28,11 +28,11 @@ export default function AuthLayout({
             <div className="flex max-w-sm flex-col items-center px-10">
 
               {/* LOGO */}
-              <Link to="/" className="mb-8 block">
+              <Link to="/" className="mb-8 block centerd">
                 <img
                   width={220}
                   height={48}
-                  src="/images/logo/auth-logo.svg"
+                  src="/images/LogoCeibo.png"
                   alt="Logo"
                   className="opacity-95"
                 />

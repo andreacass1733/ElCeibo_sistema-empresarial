@@ -219,7 +219,7 @@ const AppSidebarEmpleado: React.FC = () => {
   return (
     <aside
       className={`fixed mt-16 flex flex-col lg:mt-0 top-0 px-5 left-0
-        bg-[#4B2E1E] border-r border-[#6B4226] text-[#F5E6D3]
+        bg-[#4B2E1E] border-r border-[#6B4226] text-white
         dark:bg-[#0F0F0F] dark:border-[#C8A46B]/30 dark:text-[#E7C58F]
         h-screen transition-all duration-300 ease-in-out z-50
         ${isExpanded || isMobileOpen ? "w-[290px]" : isHovered ? "w-[290px]" : "w-[90px]"}
@@ -233,11 +233,11 @@ const AppSidebarEmpleado: React.FC = () => {
         <Link to={`/empleado/${id}`}>
           {isExpandedOrHovered ? (
             <>
-              <img className="dark:hidden" src="/images/logo/logo.svg" alt="Logo" width={150} height={40} />
-              <img className="hidden dark:block" src="/images/logo/logo-dark.svg" alt="Logo" width={150} height={40} />
+              <img className="dark:hidden" src="/images/LogoCeibo.png" alt="Logo" width={150} height={40} />
+              <img className="hidden dark:block" src="/images/LogoCeibo.png" alt="Logo" width={150} height={40} />
             </>
           ) : (
-            <img src="/images/logo/logo-icon.svg" alt="Logo" width={32} height={32} />
+            <img src="/images/LogoCeibo.png" alt="Logo" width={32} height={32} />
           )}
         </Link>
       </div>
@@ -249,8 +249,12 @@ const AppSidebarEmpleado: React.FC = () => {
             <div className="h-10 rounded-lg bg-[#6B4226]/30 animate-pulse" />
           ) : empleado ? (
             <div className="rounded-lg bg-[#6B4226]/30 dark:bg-[#C8A46B]/10 px-3 py-2">
-              <p className="text-sm font-semibold truncate">{empleado.nombre}</p>
-              <p className="text-xs opacity-60 mt-0.5">{empleado.cargo}</p>
+              <p className="text-sm font-semibold truncate text-white dark:text-[#E7C58F]">
+                {empleado.nombre}
+              </p>
+              <p className="text-xs mt-0.5 text-[#E8C9A8] dark:text-[#E7C58F]/60">
+                {empleado.cargo}
+              </p>
             </div>
           ) : null}
         </div>
@@ -294,7 +298,9 @@ const AppSidebarEmpleado: React.FC = () => {
                         {nav.icon}
                       </span>
                       {isExpandedOrHovered && (
-                        <span className="menu-item-text">{nav.name}</span>
+                        <span className="menu-item-text text-white dark:text-[#E7C58F]">
+                          {nav.name}
+                        </span>
                       )}
                     </button>
                   ) : (
@@ -313,7 +319,9 @@ const AppSidebarEmpleado: React.FC = () => {
                           {nav.icon}
                         </span>
                         {isExpandedOrHovered && (
-                          <span className="menu-item-text">{nav.name}</span>
+                          <span className="menu-item-text text-white dark:text-[#E7C58F]">
+                            {nav.name}
+                          </span>
                         )}
                       </Link>
                     )
@@ -337,6 +345,11 @@ const AppSidebarEmpleado: React.FC = () => {
                                   ? "menu-dropdown-item-active"
                                   : "menu-dropdown-item-inactive"
                               }`}
+                              style={
+                                !isActive(sub.path)
+                                  ? { color: "#E8C9A8" }
+                                  : {}
+                              }
                             >
                               {sub.name}
                             </Link>
@@ -356,12 +369,11 @@ const AppSidebarEmpleado: React.FC = () => {
           <button
             onClick={handleLogout}
             className={`w-full flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium
-              text-[#F5E6D3]/70 hover:text-[#F5E6D3] hover:bg-[#6B4226]/40
+              text-[#E8C9A8] hover:text-white hover:bg-[#6B4226]/40
               dark:text-[#E7C58F]/60 dark:hover:text-[#E7C58F] dark:hover:bg-[#C8A46B]/10
               transition-colors cursor-pointer
               ${!isExpanded && !isHovered ? "lg:justify-center" : "justify-start"}`}
           >
-            {/* Ícono logout (SVG inline para no depender de imports) */}
             <svg
               xmlns="http://www.w3.org/2000/svg"
               width="20"
